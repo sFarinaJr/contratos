@@ -156,8 +156,8 @@
     }
 
     async function gerarESubirContrato(folderId) {
-        // Carrega o template (Assets/face.docx)
-        const response = await fetch('assets/face.docx');
+        // Carrega o template (face.docx)
+        const response = await fetch('face.docx');
         const content = await response.arrayBuffer();
         const zip = new PizZip(content);
         const doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
