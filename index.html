@@ -233,11 +233,11 @@ select option{background:var(--dark3)}
         <div class="logbox" id="logbox"></div>
       </div>
 
-      <!-- Mensagem final de sucesso (aparece embaixo do log, sem botões) -->
-      <div id="success-msg" class="hidden" style="margin-top:22px;padding:24px;background:rgba(109,191,103,.08);border:1px solid rgba(109,191,103,.4);border-radius:10px;text-align:center;animation:fadeUp .5s ease both">
-        <div style="font-size:2.4rem;margin-bottom:10px">🎉</div>
-        <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:6px">Contrato gerado com sucesso!</div>
-        <div style="color:var(--muted);font-size:.92rem;font-weight:300">Tudo certo — os arquivos foram salvos e a notificação foi enviada por e-mail.</div>
+      <!-- Mensagem final (aparece embaixo do log, sem botões) -->
+      <div id="success-msg" class="hidden" style="margin-top:22px;padding:24px;border-radius:10px;text-align:center;animation:fadeUp .5s ease both">
+        <div id="success-icon" style="font-size:2.4rem;margin-bottom:10px"></div>
+        <div id="success-title" style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:6px"></div>
+        <div id="success-detail" style="color:var(--muted);font-size:.92rem;font-weight:300"></div>
       </div>
 
       <div class="brow" id="gen-row">
@@ -400,10 +400,8 @@ function goStep(n) {
     if(el) el.classList.toggle('hidden',i+1!==n);
   });
   // (removido o reset do p-suc — esse painel não existe mais nesta versão)
-  // Esconde a mensagem de sucesso ao mudar de passo
   const _sm = document.getElementById('success-msg');
   if (_sm) _sm.classList.add('hidden');
-  // Reexibe a barra de botões caso esteja oculta após sucesso
   const _gr = document.getElementById('gen-row');
   if (_gr) _gr.classList.remove('hidden');
   for(let i=1;i<=5;i++){
@@ -812,32 +810,22 @@ function applyRowToForm(row){
   // Reconstrói formulários para garantir os campos antes de preencher
   buildForms('loc-c','Locatário',S.locatarios,'loc');
   buildForms('fid-c','Fiador',S.fiadores,'fid');
-  // Locatários
-  for(let i=1;i<=nLoc;i++){
-    const p='Loc'+i+' ';
-    _setVal('loc-'+i+'-nome',row[p+'Nome']);
-    _setVal('loc-'+i+'-cpf',row[p+'CPF']);
-    _setVal('loc-'+i+'-rg',row[p+'RG']);
-    if(i===1){
-      _setVal('loc-1-whats',row['Loc1 WhatsApp']);
-      _setVal('loc-1-email',row['Loc1 E-mail']);
-      _setVal('loc-1-end',row['Loc1 Endereço']);
-      _setVal('loc-1-cep',row['Loc1 CEP']);
-      _setVal('loc-1-cidade',row['Loc1 Cidade']);
-      _setVal('loc-1-estado',row['Loc1 UF']);
-    }
+  // Helper: carrega todos os campos de uma pessoa
+  function fillPerson(prefix, sheetPrefix, idx, row){
+    const p = sheetPrefix + idx + ' ';
+    _setVal(prefix+'-'+idx+'-nome',   row[p+'Nome']);
+    _setVal(prefix+'-'+idx+'-cpf',    row[p+'CPF']);
+    _setVal(prefix+'-'+idx+'-rg',     row[p+'RG']);
+    _setVal(prefix+'-'+idx+'-whats',  row[p+'WhatsApp']);
+    _setVal(prefix+'-'+idx+'-email',  row[p+'E-mail']);
+    _setVal(prefix+'-'+idx+'-end',    row[p+'Endereço']);
+    _setVal(prefix+'-'+idx+'-cep',    row[p+'CEP']);
+    _setVal(prefix+'-'+idx+'-cidade', row[p+'Cidade']);
+    _setVal(prefix+'-'+idx+'-estado', row[p+'UF']);
   }
-  // Fiadores
-  for(let i=1;i<=nFid;i++){
-    const p='Fiad'+i+' ';
-    _setVal('fid-'+i+'-nome',row[p+'Nome']);
-    _setVal('fid-'+i+'-cpf',row[p+'CPF']);
-    _setVal('fid-'+i+'-rg',row[p+'RG']);
-    if(i===1){
-      _setVal('fid-1-whats',row['Fiad1 WhatsApp']);
-      _setVal('fid-1-email',row['Fiad1 E-mail']);
-    }
-  }
+  // Carrega TODOS os locatários e fiadores cadastrados
+  for (let i=1; i<=nLoc; i++) fillPerson('loc', 'Loc',  i, row);
+  for (let i=1; i<=nFid; i++) fillPerson('fid', 'Fiad', i, row);
   // Reanexa os listeners de busca por nome (foram criados pelo buildForms novo)
   attachLoc1NameLookup();
   toast('Dados carregados da planilha — confira os campos antes de finalizar.','ok');
@@ -943,27 +931,25 @@ async function run(){
     setProg(60,'Enviando contrato para o servidor...');
     log('Enviando contrato e anexos...');
 
-    const headers=['Data Registro','Clínica','Início Contrato','Vencimento Dia','Valor Mensal','Prazo Mínimo',
-      'Nº Locatários','Nº Fiadores',
-      'Loc1 Nome','Loc1 CPF','Loc1 RG','Loc1 WhatsApp','Loc1 E-mail','Loc1 Endereço','Loc1 CEP','Loc1 Cidade','Loc1 UF',
-      'Loc2 Nome','Loc2 CPF','Loc2 RG',
-      'Loc3 Nome','Loc3 CPF','Loc3 RG',
-      'Fiad1 Nome','Fiad1 CPF','Fiad1 RG','Fiad1 WhatsApp','Fiad1 E-mail',
-      'Fiad2 Nome','Fiad2 CPF','Fiad2 RG',
-      'Fiad3 Nome','Fiad3 CPF','Fiad3 RG',
-      'ID Pasta Drive','Link Pasta Drive'];
+    // Cabeçalhos COMPLETOS — todos os campos para todos os locatários (1-3) e fiadores (1-3),
+    // assim o pré-preenchimento traz todos os dados nas próximas vezes.
+    const personCols = ['Nome','CPF','RG','WhatsApp','E-mail','Endereço','CEP','Cidade','UF'];
+    const headers = ['Data Registro','Clínica','Início Contrato','Vencimento Dia','Valor Mensal','Prazo Mínimo',
+      'Nº Locatários','Nº Fiadores'];
+    for (let i=1;i<=3;i++) personCols.forEach(c => headers.push('Loc'+i+' '+c));
+    for (let i=1;i<=3;i++) personCols.forEach(c => headers.push('Fiad'+i+' '+c));
+    headers.push('ID Pasta Drive','Link Pasta Drive');
 
     const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Cuiaba'});
     const l1=locs[0]||{},l2=locs[1]||{},l3=locs[2]||{};
     const f1=fids[0]||{},f2=fids[1]||{},f3=fids[2]||{};
-    const row=[
+    function pcols(p){
+      return [p.nome,p.cpf,p.rg,p.whats,p.email,p.end,p.cep,p.cidade,p.estado];
+    }
+    const row = [
       now,cn,fmtD(contrato.di),contrato.venc,'R$ '+contrato.val,contrato.prazo,S.locatarios,S.fiadores,
-      l1.nome,l1.cpf,l1.rg,l1.whats,l1.email,l1.end,l1.cep,l1.cidade,l1.estado,
-      l2.nome,l2.cpf,l2.rg,
-      l3.nome,l3.cpf,l3.rg,
-      f1.nome,f1.cpf,f1.rg,f1.whats,f1.email,
-      f2.nome,f2.cpf,f2.rg,
-      f3.nome,f3.cpf,f3.rg,
+      ...pcols(l1), ...pcols(l2), ...pcols(l3),
+      ...pcols(f1), ...pcols(f2), ...pcols(f3),
       '', ''
     ].map(v=>String(v||''));
 
@@ -995,15 +981,47 @@ async function run(){
 
     setProg(100,'✓ Concluído com sucesso!');
     const totalSaved = (result.filesUploaded != null) ? result.filesUploaded : (2+totalUserDocs);
+    if(result.folderReused) log('Pasta existente atualizada (arquivos com mesmo nome foram substituídos)','ok');
     log(totalSaved+' arquivo(s) salvos no Google Drive','ok');
-    if(result.pdfGenerated) log('PDF do contrato gerado a partir do template','ok');
+    if(result.pdfGenerated){
+      log('PDF do contrato gerado a partir do template','ok');
+    } else if(result.pdfError){
+      log('⚠️ PDF NÃO foi gerado — '+result.pdfError,'er');
+    }
     if(result.sheetUrl) log('Registrado na planilha de contratos','ok');
-    if(result.emailSent) log('E-mail de notificação enviado','ok');
+    if(result.emailSent){
+      log('E-mail de notificação enviado','ok');
+    } else if(result.pdfGenerated===false){
+      log('E-mail não enviado (sem PDF anexo)','er');
+    }
     log('🎉 Processo finalizado!','ok');
 
     try{ localStorage.setItem('contratos_lastUser', locs[0].nome||''); }catch(e){}
 
-    document.getElementById('success-msg').classList.remove('hidden');
+    // Define ícone/título/detalhe conforme o resultado real (PDF + e-mail)
+    const sm = document.getElementById('success-msg');
+    const si = document.getElementById('success-icon');
+    const st = document.getElementById('success-title');
+    const sd = document.getElementById('success-detail');
+    let bg='rgba(109,191,103,.08)', bd='rgba(109,191,103,.4)';
+    if (result.pdfGenerated && result.emailSent) {
+      si.textContent='🎉';
+      st.textContent='Contrato gerado com sucesso!';
+      sd.textContent='Tudo certo — os arquivos foram salvos e o e-mail foi enviado.';
+    } else if (result.pdfGenerated && !result.emailSent) {
+      bg='rgba(232,201,122,.10)'; bd='rgba(232,201,122,.5)';
+      si.textContent='⚠️';
+      st.textContent='Contrato gerado, mas o e-mail não foi enviado.';
+      sd.textContent='Os arquivos foram salvos no Drive normalmente. Verifique o log acima.';
+    } else {
+      bg='rgba(224,82,82,.10)'; bd='rgba(224,82,82,.5)';
+      si.textContent='⚠️';
+      st.textContent='Contrato salvo, mas o PDF não foi gerado.';
+      sd.textContent='O DOCX está no Drive. A conversão para PDF falhou — veja o detalhe no log acima.';
+    }
+    sm.style.background = bg;
+    sm.style.border = '1px solid ' + bd;
+    sm.classList.remove('hidden');
     document.getElementById('gen-row').classList.add('hidden');
     document.querySelectorAll('.si').forEach(s=>{s.classList.remove('active');s.classList.add('done');});
 
