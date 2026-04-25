@@ -165,7 +165,7 @@ select option{background:var(--dark3)}
             <option value="">Selecione o prazo</option>
             <option value="12 (doze) meses">12 meses</option>
             <option value="24 (vinte e quatro) meses">24 meses</option>
-//            <option value="06 (seis) meses">6 meses</option>
+            <option value="06 (seis) meses">6 meses</option>
           </select>
         </div>
       </div>
@@ -261,70 +261,31 @@ select option{background:var(--dark3)}
 // ═══════════════════════════════════════════════════════════════
 // SERVICE ACCOUNT — JWT RS256 via Web Crypto API (sem popup)
 // ═══════════════════════════════════════════════════════════════
-const SA_EMAIL = "contratos-bot@contratos-conceitualle.iam.gserviceaccount.com";
-const SA_KEY_ID = "fe716b9c555ead68aabe09496e91d49a6962d931";
-const SA_PRIVATE_KEY_PEM = `-----BEGIN PRIVATE KEY-----
-MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCksbSWHlk/EIfS
-IJwT09hgQ2+NEgekpqgvBurQM43kbBP1UypECBDBEaw5+VTbx6Ld/V4jnRIwH6hx
-ZaQWJaUgXCVOCW+uE3M9IYXM/5B3snQzX2IuhTbCf3vH45ewons9UVzlzYKdd8CY
-nk9yiLOpW7FF+ZbJJusB1Wnr1C6kSOZyNeXVkY6l3BgppGgdRJbJ3lBYSGrYut1j
-yoE3wLwtORri+eAfteId+VqAdJe9p7rNtSohZ6pCdgIpp0fuEs3aTpqGfJ52YQMA
-ubdFgtBDbbIlxKj3iLVxVZ4hLHjxME8ZRXa1D9k6SDY3r/iQ/3u/o9KFHqCnhGfm
-CzuwBVzvAgMBAAECggEACSx23SfKm9ctYZh8aSRTOKV4+Lgo4dSAqMHvYXKFtFQK
-1o7v20NBv6de2wnW3rkjis76p+wvX6vbw5lARxWIuaE4WLzw0hb2Q9DytYUExI4V
-p+jnvKSh9LqKKAu23tlmGPfHv2svm9rYSQgEb+JKc6QOX1H0QrcevwbmtAKpKHBq
-LiBBzgHIKh7+TY174MIhKUkjIx03Q8xNtJrUnjJ7SuWvHLDUINnusdjgfhNIcoU5
-sPK9O9xmWhp9YR+VeidPIG2W7/eHaEsVo+riQJ1Un41SaJTZiqzCwmt1XiiRWIXN
-5riZPj4ngGm5p/nDssbY2PaEH9miGYUlql9gp2Qq4QKBgQDapdHevQJMtFAx77y6
-2PLZCkzp3cIb2NSabK5REcFvwQ+STk0aFzJjmDrCIANOfYdlPYVfIsNQiI9Xrabu
-V5q2/49p3aqoSs4yv16QmoBVPh6hhTUQzHoVaiTQ0XDudnMLprKQCEgPXu1wvx0f
-Xq06nVq6hu6/bKUB5gRqUJkfoQKBgQDA1FHMqUvjYjHuZI6wpqwkGuxKcfHAkeZd
-1Jrbia0lH+Z9uETJj+PqiLhLhT113YPdfjQyvbrPtxtnJ3cjgL6eJgxo5cxcN8+w
-T+figRpOo2o0/rlPwovOnXVU0wz1Yd5ecd9gozcZPIAKCp6VIpMUFyUTwnSbsBu6
-405zfQdyjwKBgQCwDO40W5nbayBbZP5gsEixq5KMiAtAYtGk2bdt/U70jc3c7wEz
-7dObz7oYDrC65WY8hVG7bYE4egx4+5C6vn0LtjCifGJqCXmH8QDSjCSi/laplVlK
-AmqWjZXBMbKtv2AY1ItYX+KtxbCHpMptNM1ksciZAgaAyZj/M1cAx47ToQKBgQCh
-YRAUeJtKcaPYH9BLhzIKBX47z6DDyVdCr+vqUA7YQxpjnRP0nLfiUQnsKlaFjh4O
-ANEuphryPAxzCFRtIhJlyPIZ2Dhv9UWcCUPIDMQ3jAwWzhfI6MiY4q6PjxIJSx8P
-a73G4tH6DOgbf0e5CHaPGc+t+dAdfAW5IwNFJB5XgQKBgQCjd5ynJ/+ym4r3wH1n
-yFlACQfRYd0yumWMsd9mi1OB9T941CG7lVkV86aWJXUrDEyWMKvHJqC4mYN7SaRD
-na7JXR/lelBafl8yQAJu4u5p34ztKTBlnY2JQMMjcy/YzXvy3bUkekqNoLvsni6+
-ETQyncpESjERryYgaLoW9yRd6A==
------END PRIVATE KEY-----`;
-const SCOPES = "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets";
 const SHEET_NAME = "Registros_Contratos_Conceitualle";
 
 // ════════════════════════════════════════════════════════════════════════════
-// CONFIGURAÇÃO DE E-MAIL (Google Apps Script Web App)
-// Para enviar e-mails automaticamente com o PDF anexo após cada contrato:
-// 1. Acesse https://script.google.com  →  Novo projeto
-// 2. Cole o código abaixo no editor e salve:
+// CONFIGURAÇÃO ÚNICA — Apps Script Web App
+// ────────────────────────────────────────────────────────────────────────────
+// O Apps Script roda usando SUA conta Google, então:
+//   • Pastas e arquivos no Drive ficam no SEU armazenamento (sem erro 403)
+//   • A planilha de registros fica no SEU Drive
+//   • O e-mail é enviado pelo SEU Gmail
 //
-//    function doPost(e) {
-//      const p = JSON.parse(e.postData.contents);
-//      const blob = Utilities.newBlob(Utilities.base64Decode(p.fileBase64), p.mimeType, p.fileName);
-//      GmailApp.sendEmail(p.to, p.subject, p.body, { attachments: [blob], name: 'Sistema de Contratos' });
-//      return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
-//    }
-//
-// 3. Implementar  →  Nova implementação  →  Tipo: "Aplicativo da Web"
-//    Executar como: "Eu mesmo"  |  Quem tem acesso: "Qualquer pessoa"
-// 4. Copie o URL da implementação e cole abaixo (entre as aspas):
-const MAIL_WEBHOOK = "";
-const MAIL_TO = "sfarinajr@gmail.com";
+// PASSO A PASSO (faça uma vez só):
+//   1) Acesse  https://script.google.com  →  Novo projeto
+//   2) Apague o conteúdo padrão e cole o código de "apps_script.gs"
+//      (arquivo gerado junto com este HTML)
+//   3) No topo do script, defina PARENT_FOLDER_ID com o ID da pasta-mãe
+//      no seu Drive onde quer salvar os contratos
+//   4) Implementar  →  Nova implementação  →  Tipo: "Aplicativo da Web"
+//      Executar como: "Eu mesmo"
+//      Quem tem acesso: "Qualquer pessoa"
+//   5) Autorize quando pedir (Drive + Gmail)
+//   6) Copie a URL gerada e cole entre as aspas abaixo:
+const APPS_SCRIPT_URL = "";
 
-// ════════════════════════════════════════════════════════════════════════════
-// PASTA-MÃE NO GOOGLE DRIVE (corrige erro 403 "storageQuotaExceeded")
-// Service Accounts NÃO têm cota de armazenamento própria. A solução é criar
-// uma pasta no SEU Drive e compartilhá-la com a conta de serviço como Editor:
-//   Conta de serviço: contratos-bot@contratos-conceitualle.iam.gserviceaccount.com
-//
-// Passo a passo:
-//   1) Crie uma pasta no seu Google Drive (ex.: "Contratos Conceitualle")
-//   2) Clique com o botão direito → Compartilhar
-//   3) Cole o e-mail da conta de serviço acima e dê permissão de "Editor"
-//   4) Abra a pasta. O ID está na URL após /folders/   →  cole entre as aspas:
-const PARENT_FOLDER_ID = "1-yTOmEGZz9yKizztTibYDrtPdSMktLOL";
+// E-mail que recebe a notificação de novo contrato (com PDF anexo)
+const MAIL_TO = "sfarinajr@gmail.com";
 // ════════════════════════════════════════════════════════════════════════════
 
 // TEMPLATES DOCX (caminhos relativos ao HTML — ficam ao lado deste arquivo)
@@ -335,58 +296,36 @@ const TMPL_URLS = {
 };
 // ════════════════════════════════════════════════════════════════════════════
 
-
-// (Templates DOCX agora ficam fora do HTML — veja TMPL_URLS abaixo)
-
 let S = { clinica: null, locatarios: 1, fiadores: 1, _token: null, _tokenExp: 0 };
 
-// ── JWT Auth ──────────────────────────────────────────────────
-function b64url(str) {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(str)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
-function b64urlBytes(bytes) {
-  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
-async function importKey(pem) {
-  const body = pem.replace(/-----[^-]+-----/g,'').replace(/\s/g,'');
-  const der = Uint8Array.from(atob(body), c => c.charCodeAt(0));
-  return crypto.subtle.importKey('pkcs8', der.buffer,
-    { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' }, false, ['sign']);
-}
-async function getToken() {
-  const now = Math.floor(Date.now()/1000);
-  if (S._token && now < S._tokenExp - 60) return S._token;
-  const hdr = b64url(JSON.stringify({ alg:'RS256', typ:'JWT', kid:SA_KEY_ID }));
-  const pay = b64url(JSON.stringify({
-    iss:SA_EMAIL, scope:SCOPES,
-    aud:'https://oauth2.googleapis.com/token',
-    iat:now, exp:now+3600
-  }));
-  const key = await importKey(SA_PRIVATE_KEY_PEM);
-  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(hdr+'.'+pay));
-  const jwt = hdr+'.'+pay+'.'+b64urlBytes(sig);
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion='+jwt
+// ── Comunicação com Apps Script ──────────────────────────────
+async function postToScript(payload) {
+  if (!APPS_SCRIPT_URL) throw new Error('APPS_SCRIPT_URL não configurado (veja o topo do <script>).');
+  const r = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    redirect: 'follow'
   });
-  if (!r.ok) throw new Error('Auth JWT falhou: '+await r.text());
-  const d = await r.json();
-  S._token = d.access_token;
-  S._tokenExp = now + (d.expires_in||3600);
-  return S._token;
+  if (!r.ok) throw new Error('HTTP '+r.status+' do servidor');
+  const data = await r.json();
+  return data;
 }
-async function api(url, opts={}) {
-  const token = await getToken();
-  const r = await fetch(url, {
-    ...opts,
-    headers:{ Authorization:'Bearer '+token, ...(opts.headers||{}) }
-  });
-  if (!r.ok) throw new Error('HTTP '+r.status+': '+(await r.text()).slice(0,300));
-  const ct = r.headers.get('content-type')||'';
-  return ct.includes('json') ? r.json() : r.arrayBuffer();
+async function getFromScript(params) {
+  if (!APPS_SCRIPT_URL) return null;
+  const qs = new URLSearchParams(params).toString();
+  const r = await fetch(APPS_SCRIPT_URL+'?'+qs, { method:'GET', redirect:'follow' });
+  if (!r.ok) return null;
+  return r.json();
+}
+function bufToB64(buf) {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i=0; i<bytes.length; i+=CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i+CHUNK));
+  }
+  return btoa(bin);
 }
 
 // ── Clinic / Counter / Nav ─────────────────────────────────────
@@ -720,128 +659,6 @@ async function genPDF(locs,fids,c){
   return doc.output('arraybuffer');
 }
 
-// ── Drive ──────────────────────────────────────────────────────
-async function driveCreateFolder(name){
-  if(!PARENT_FOLDER_ID){
-    throw new Error('PARENT_FOLDER_ID não configurado. Crie uma pasta no seu Drive, '+
-      'compartilhe com contratos-bot@contratos-conceitualle.iam.gserviceaccount.com '+
-      '(permissão Editor) e cole o ID da pasta no topo do <script>.');
-  }
-  const meta={ name, mimeType:'application/vnd.google-apps.folder', parents:[PARENT_FOLDER_ID] };
-  const r=await api('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(meta)
-  });
-  return r.id;
-}
-async function driveUpload(name,mime,data,folderId){
-  const token=await getToken();
-  const init=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true',{
-    method:'POST',
-    headers:{
-      'Authorization':'Bearer '+token,
-      'Content-Type':'application/json',
-      'X-Upload-Content-Type':mime,
-      'X-Upload-Content-Length':data.byteLength
-    },
-    body:JSON.stringify({name,parents:[folderId]})
-  });
-  if(!init.ok) throw new Error('Upload init "'+name+'": '+await init.text());
-  const uploadUrl=init.headers.get('Location');
-  if(!uploadUrl) throw new Error('Sem Location header para '+name);
-  const up=await fetch(uploadUrl,{
-    method:'PUT',
-    headers:{'Content-Type':mime},
-    body:data
-  });
-  if(!up.ok) throw new Error('Upload "'+name+'": '+await up.text());
-  return up.json();
-}
-function toAB(file){
-  return new Promise((res,rej)=>{
-    const fr=new FileReader();
-    fr.onload=e=>res(e.target.result);fr.onerror=rej;
-    fr.readAsArrayBuffer(file);
-  });
-}
-
-// ── Sheets ─────────────────────────────────────────────────────
-async function sheetsGetOrCreate(){
-  const q=encodeURIComponent("name='"+SHEET_NAME+"' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
-  const list=await api('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true&corpora=allDrives');
-  if(list.files&&list.files.length) return list.files[0].id;
-
-  const hdrs=['Data Registro','Clínica','Início Contrato','Vencimento Dia','Valor Mensal','Prazo Mínimo',
-    'Nº Locatários','Nº Fiadores',
-    'Loc1 Nome','Loc1 CPF','Loc1 RG','Loc1 WhatsApp','Loc1 E-mail','Loc1 Endereço','Loc1 CEP','Loc1 Cidade','Loc1 UF',
-    'Loc2 Nome','Loc2 CPF','Loc2 RG',
-    'Loc3 Nome','Loc3 CPF','Loc3 RG',
-    'Fiad1 Nome','Fiad1 CPF','Fiad1 RG','Fiad1 WhatsApp','Fiad1 E-mail',
-    'Fiad2 Nome','Fiad2 CPF','Fiad2 RG',
-    'Fiad3 Nome','Fiad3 CPF','Fiad3 RG',
-    'ID Pasta Drive','Link Pasta Drive'];
-
-  const created=await api('https://sheets.googleapis.com/v4/spreadsheets',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      properties:{title:SHEET_NAME},
-      sheets:[{properties:{title:'Contratos',index:0}}]
-    })
-  });
-  const sid=created.spreadsheetId;
-
-  // Move a planilha recém-criada para a pasta-mãe (compartilhada com você),
-  // senão ela some na conta da service account (sem quota).
-  if(PARENT_FOLDER_ID){
-    try{
-      await api('https://www.googleapis.com/drive/v3/files/'+sid+'?addParents='+
-        encodeURIComponent(PARENT_FOLDER_ID)+'&removeParents=root&supportsAllDrives=true',
-        { method:'PATCH', headers:{'Content-Type':'application/json'}, body:'{}' });
-    }catch(e){ console.log('Não foi possível mover a planilha:', e.message); }
-  }
-
-  // Insere cabeçalho
-  await api('https://sheets.googleapis.com/v4/spreadsheets/'+sid+'/values/Contratos!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({values:[hdrs]})
-  });
-  // Formata cabeçalho em negrito
-  await api('https://sheets.googleapis.com/v4/spreadsheets/'+sid+':batchUpdate',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({requests:[{repeatCell:{
-      range:{sheetId:0,startRowIndex:0,endRowIndex:1,startColumnIndex:0,endColumnIndex:hdrs.length},
-      cell:{userEnteredFormat:{textFormat:{bold:true},backgroundColor:{red:0.13,green:0.1,blue:0.05}}},
-      fields:'userEnteredFormat(textFormat,backgroundColor)'
-    }}]})
-  });
-  return sid;
-}
-async function sheetsAppend(sid,locs,fids,c,folderId){
-  const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Cuiaba'});
-  const cn=S.clinica===1?'Odonto Conceitualle':'Face Instituto Odontológico';
-  const l1=locs[0]||{},l2=locs[1]||{},l3=locs[2]||{};
-  const f1=fids[0]||{},f2=fids[1]||{},f3=fids[2]||{};
-  const row=[
-    now,cn,fmtD(c.di),c.venc,'R$ '+c.val,c.prazo,S.locatarios,S.fiadores,
-    l1.nome,l1.cpf,l1.rg,l1.whats,l1.email,l1.end,l1.cep,l1.cidade,l1.estado,
-    l2.nome,l2.cpf,l2.rg,
-    l3.nome,l3.cpf,l3.rg,
-    f1.nome,f1.cpf,f1.rg,f1.whats,f1.email,
-    f2.nome,f2.cpf,f2.rg,
-    f3.nome,f3.cpf,f3.rg,
-    folderId,'https://drive.google.com/drive/folders/'+folderId
-  ];
-  await api('https://sheets.googleapis.com/v4/spreadsheets/'+sid+'/values/Contratos!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({values:[row.map(v=>String(v||''))]})
-  });
-}
-
 // ── Progress / Log ─────────────────────────────────────────────
 function setProg(pct,msg){
   document.getElementById('prf').style.width=pct+'%';
@@ -859,33 +676,24 @@ function log(msg,type='inf'){
 let SHEET_DATA = []; // cache de registros existentes carregados da planilha
 
 async function loadExistingRows(){
+  if(!APPS_SCRIPT_URL) return;
   try{
-    await getToken();
-    const q=encodeURIComponent("name='"+SHEET_NAME+"' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
-    const list=await api('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)');
-    if(!list.files||!list.files.length){ SHEET_DATA=[]; return; }
-    const sid=list.files[0].id;
-    const r=await api('https://sheets.googleapis.com/v4/spreadsheets/'+sid+'/values/Contratos!A1:AZ');
-    if(!r.values||r.values.length<2){ SHEET_DATA=[]; return; }
-    const headers=r.values[0];
-    SHEET_DATA=r.values.slice(1).map(row=>{
-      const o={}; headers.forEach((h,i)=>{ o[h]=(row[i]==null?'':String(row[i])); });
-      return o;
-    });
-    console.log('[Contratos] Carregados '+SHEET_DATA.length+' registros existentes da planilha.');
-    // Reconhecimento automático via localStorage
-    let lastUser='';
-    try{ lastUser=localStorage.getItem('contratos_lastUser')||''; }catch(e){}
-    if(lastUser){
-      const row=findRowByName(lastUser);
-      if(row){
-        toast('Bem-vindo de volta! Carregando seus dados…','ok');
-        setTimeout(()=>applyRowToForm(row),250);
+    const data = await getFromScript({ action:'loadRows' });
+    if(data && data.ok && Array.isArray(data.rows)){
+      SHEET_DATA = data.rows;
+      console.log('[Contratos] '+SHEET_DATA.length+' registros carregados.');
+      let lastUser='';
+      try{ lastUser=localStorage.getItem('contratos_lastUser')||''; }catch(e){}
+      if(lastUser){
+        const row=findRowByName(lastUser);
+        if(row){
+          toast('Bem-vindo de volta! Carregando seus dados…','ok');
+          setTimeout(()=>applyRowToForm(row),250);
+        }
       }
     }
   }catch(e){
-    console.log('[Contratos] loadExistingRows error:',e.message);
-    SHEET_DATA=[];
+    console.log('[Contratos] loadExistingRows error:', e.message);
   }
 }
 
@@ -994,45 +802,17 @@ function attachLoc1NameLookup(){
   }
 }
 
-// ── E-mail Notification ───────────────────────────────────────
-async function sendNotificationEmail(locName, clinicName, pdfBuf, pdfFileName){
-  if(!MAIL_WEBHOOK || !/^https?:\/\//.test(MAIL_WEBHOOK)){
-    log('E-mail não enviado — MAIL_WEBHOOK não configurado (veja instruções no topo do <script>).','er');
-    return;
-  }
-  const bytes=new Uint8Array(pdfBuf);
-  let bin='';
-  const CHUNK=0x8000;
-  for(let i=0;i<bytes.length;i+=CHUNK){
-    bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+CHUNK));
-  }
-  const b64=btoa(bin);
-  const subject='Novo contrato preenchido — '+locName+' — '+clinicName;
-  const body='Olá,\n\nUm novo contrato foi preenchido no sistema:\n\n'+
-             '• Locatário 1: '+locName+'\n'+
-             '• Clínica: '+clinicName+'\n'+
-             '• Data: '+new Date().toLocaleString('pt-BR',{timeZone:'America/Cuiaba'})+'\n\n'+
-             'O PDF do contrato gerado está em anexo.\n\n— Sistema de Contratos';
-  const payload={ to:MAIL_TO, subject:subject, body:body,
-                  fileName:pdfFileName, fileBase64:b64, mimeType:'application/pdf' };
-  // Apps Script Web Apps redirect to a Google domain; using mode:'no-cors'
-  // permite enviar a requisição sem que o navegador bloqueie por CORS.
-  // A resposta não pode ser lida, mas o e-mail é enviado normalmente.
-  try {
-    await fetch(MAIL_WEBHOOK,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify(payload)
-    });
-  } catch(err) {
-    // Em mode:'no-cors' o fetch pode falhar como TypeError "failed to fetch".
-    // Não propagamos o erro — o contrato já foi salvo no Drive e na planilha.
-    log('Aviso — não foi possível confirmar envio do e-mail: '+err.message,'er');
-  }
+// ── Helper: File → ArrayBuffer ───────────────────────────────
+function toAB(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=e=>res(e.target.result);
+    fr.onerror=rej;
+    fr.readAsArrayBuffer(file);
+  });
 }
 
-// ── MAIN RUN ───────────────────────────────────────────────────
+// ── MAIN RUN (Apps Script faz Drive + Sheets + E-mail) ────────
 async function run(){
   const locs=collectP('loc',S.locatarios);
   const fids=collectP('fid',S.fiadores);
@@ -1040,9 +820,14 @@ async function run(){
   if(!gv('f-di')){toast('Informe a data de início','err');return;}
   if(!gv('f-venc')){toast('Informe o dia de vencimento','err');return;}
   if(!gv('f-val')){toast('Informe o valor do aluguel','err');return;}
+  if(!APPS_SCRIPT_URL){
+    toast('Sistema ainda não configurado — veja instruções no topo do <script>.','err');
+    return;
+  }
 
   const contrato={di:gv('f-di'),venc:gv('f-venc'),val:gv('f-val'),prazo:gv('f-prazo')};
   const folderName=locs[0].nome;
+  const cn=S.clinica===1?'Odonto Conceitualle':'Face Instituto Odontológico';
   const btn=document.getElementById('btn-gen');
   btn.disabled=true;
   document.getElementById('prog-sec').classList.remove('hidden');
@@ -1050,100 +835,124 @@ async function run(){
   document.getElementById('gen-row').style.pointerEvents='none';
   document.getElementById('logbox').innerHTML='';
 
-  let folderId=null,sheetId=null;
   try{
-    setProg(3,'Autenticando com conta de serviço...');
-    log('Obtendo token JWT...');
-    try {
-      await getToken();
-    } catch(err) {
-      throw new Error('Falha na autenticação Google — '+err.message+
-        ' (verifique sua conexão com a internet e tente novamente).');
-    }
-    log('Autenticado — sem necessidade de login manual','ok');
-
-    setProg(10,'Criando pasta no Google Drive...');
-    log('Criando pasta: '+folderName);
-    folderId=await driveCreateFolder(folderName);
-    log('Pasta criada (ID: '+folderId+')','ok');
-
-    setProg(20,'Preenchendo template DOCX...');
-    log('Processando template do contrato...');
+    setProg(10,'Gerando documento DOCX...');
+    log('Preenchendo template do contrato...');
     const docxBuf=await fillDocx(locs,fids,contrato);
-    log('Template preenchido com sucesso','ok');
+    log('Documento DOCX preenchido','ok');
 
-    setProg(35,'Enviando DOCX para o Drive...');
-    const docxName=folderName+'_contrato.docx';
-    log('Enviando: '+docxName);
-    await driveUpload(docxName,'application/vnd.openxmlformats-officedocument.wordprocessingml.document',docxBuf,folderId);
-    log(docxName+' salvo no Drive','ok');
-
-    setProg(50,'Gerando PDF...');
+    setProg(25,'Gerando PDF...');
     log('Gerando PDF do contrato...');
     const pdfBuf=await genPDF(locs,fids,contrato);
     log('PDF gerado','ok');
 
-    setProg(60,'Enviando PDF para o Drive...');
-    const pdfName=folderName+'.pdf';
-    log('Enviando: '+pdfName);
-    await driveUpload(pdfName,'application/pdf',pdfBuf,folderId);
-    log(pdfName+' salvo no Drive','ok');
+    setProg(40,'Preparando arquivos...');
+    const files=[];
+    files.push({
+      name: folderName+'_contrato.docx',
+      mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      base64: bufToB64(docxBuf)
+    });
+    files.push({
+      name: folderName+'.pdf',
+      mime: 'application/pdf',
+      base64: bufToB64(pdfBuf)
+    });
 
+    // Anexos cumulativos do usuário
     const allP=[
       ...locs.map((l,i)=>({...l,label:'Locatario_'+(i+1)+'_'+(l.nome||'').replace(/\s+/g,'_')})),
       ...fids.map((f,i)=>({...f,label:'Fiador_'+(i+1)+'_'+(f.nome||'').replace(/\s+/g,'_')}))
     ].filter(p=>p.docs && p.docs.length);
-    let totalDocs=0; allP.forEach(p=>totalDocs+=p.docs.length);
-    let docCount=0;
+
+    const totalAttach = allP.reduce((a,p)=>a+p.docs.length,0);
+    let totalUserDocs=0;
     for(let i=0;i<allP.length;i++){
       const p=allP[i];
       for(let j=0;j<p.docs.length;j++){
-        docCount++;
         const file=p.docs[j];
-        setProg(60+Math.round(docCount/Math.max(totalDocs,1)*20),'Enviando doc '+docCount+'/'+totalDocs+': '+p.nome+'...');
-        log('Enviando documento '+(j+1)+'/'+p.docs.length+' de: '+p.nome+' ('+file.name+')');
         const buf=await toAB(file);
         const ext=(file.name.split('.').pop()||'bin');
         const suffix=p.docs.length>1?('_doc'+(j+1)):'';
-        await driveUpload(p.label+suffix+'.'+ext,file.type||'application/octet-stream',buf,folderId);
-        log('Documento '+(j+1)+' de '+p.nome+' enviado','ok');
+        files.push({
+          name: p.label+suffix+'.'+ext,
+          mime: file.type||'application/octet-stream',
+          base64: bufToB64(buf)
+        });
+        totalUserDocs++;
+        setProg(40+Math.round(totalUserDocs/Math.max(totalAttach,1)*15),'Preparando anexos...');
+        log('Anexo preparado: '+p.nome+' — '+file.name);
       }
     }
-    let totalUploaded=2+docCount;
 
-    setProg(88,'Registrando na planilha...');
-    log('Acessando planilha de registros...');
-    try{
-      sheetId=await sheetsGetOrCreate();
-      await sheetsAppend(sheetId,locs,fids,contrato,folderId);
-      log('Dados registrados na planilha Contratos','ok');
-    }catch(e){
-      log('Aviso — planilha: '+e.message,'er');
-    }
+    setProg(60,'Enviando contrato para o servidor...');
+    log('Enviando contrato e anexos...');
 
-    setProg(94,'Enviando e-mail de notificação...');
-    log('Enviando e-mail para '+MAIL_TO+'...');
-    try{
-      const cnEmail=S.clinica===1?'Odonto Conceitualle':'Face Instituto Odontológico';
-      await sendNotificationEmail(locs[0].nome, cnEmail, pdfBuf, folderName+'.pdf');
-      log('E-mail enviado (com PDF em anexo)','ok');
-    }catch(e){
-      log('Aviso — e-mail: '+e.message,'er');
-    }
+    const headers=['Data Registro','Clínica','Início Contrato','Vencimento Dia','Valor Mensal','Prazo Mínimo',
+      'Nº Locatários','Nº Fiadores',
+      'Loc1 Nome','Loc1 CPF','Loc1 RG','Loc1 WhatsApp','Loc1 E-mail','Loc1 Endereço','Loc1 CEP','Loc1 Cidade','Loc1 UF',
+      'Loc2 Nome','Loc2 CPF','Loc2 RG',
+      'Loc3 Nome','Loc3 CPF','Loc3 RG',
+      'Fiad1 Nome','Fiad1 CPF','Fiad1 RG','Fiad1 WhatsApp','Fiad1 E-mail',
+      'Fiad2 Nome','Fiad2 CPF','Fiad2 RG',
+      'Fiad3 Nome','Fiad3 CPF','Fiad3 RG',
+      'ID Pasta Drive','Link Pasta Drive'];
+
+    const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Cuiaba'});
+    const l1=locs[0]||{},l2=locs[1]||{},l3=locs[2]||{};
+    const f1=fids[0]||{},f2=fids[1]||{},f3=fids[2]||{};
+    const row=[
+      now,cn,fmtD(contrato.di),contrato.venc,'R$ '+contrato.val,contrato.prazo,S.locatarios,S.fiadores,
+      l1.nome,l1.cpf,l1.rg,l1.whats,l1.email,l1.end,l1.cep,l1.cidade,l1.estado,
+      l2.nome,l2.cpf,l2.rg,
+      l3.nome,l3.cpf,l3.rg,
+      f1.nome,f1.cpf,f1.rg,f1.whats,f1.email,
+      f2.nome,f2.cpf,f2.rg,
+      f3.nome,f3.cpf,f3.rg,
+      '', ''
+    ].map(v=>String(v||''));
+
+    const payload={
+      action:'submitContract',
+      sheetName: SHEET_NAME,
+      folderName: folderName,
+      files: files,
+      headers: headers,
+      row: row,
+      email:{
+        to: MAIL_TO,
+        subject: 'Novo contrato preenchido — '+locs[0].nome+' — '+cn,
+        body: 'Um novo contrato foi preenchido no sistema.\n\n'+
+              'Locatário 1: '+locs[0].nome+'\n'+
+              'Clínica: '+cn+'\n'+
+              'Data: '+now+'\n\n'+
+              'O PDF do contrato está em anexo.',
+        pdfFileName: folderName+'.pdf',
+        pdfBase64: bufToB64(pdfBuf)
+      }
+    };
+
+    const result=await postToScript(payload);
+    if(!result || !result.ok) throw new Error((result&&result.error)||'Falha desconhecida no servidor');
 
     setProg(100,'✓ Concluído com sucesso!');
+    log((2+totalUserDocs)+' arquivo(s) salvos no Google Drive','ok');
+    if(result.sheetUrl) log('Registrado na planilha de contratos','ok');
+    if(result.emailSent) log('E-mail de notificação enviado','ok');
     log('🎉 Processo finalizado!','ok');
+
+    try{ localStorage.setItem('contratos_lastUser', locs[0].nome||''); }catch(e){}
 
     setTimeout(()=>{
       ['p1','p2','p3','p4','p5'].forEach(id=>{
         const el=document.getElementById(id);if(el) el.classList.add('hidden');
       });
       document.getElementById('p-suc').classList.remove('hidden');
-      document.getElementById('suc-msg').textContent=totalUploaded+' arquivo(s) salvos no Google Drive com sucesso.';
+      document.getElementById('suc-msg').textContent=(2+totalUserDocs)+' arquivo(s) salvos com sucesso.';
       document.getElementById('suc-folder').textContent='📁 Pasta: "'+folderName+'"';
-      document.getElementById('drive-lnk').href='https://drive.google.com/drive/folders/'+folderId;
-      if(sheetId){
-        document.getElementById('sheet-lnk').href='https://docs.google.com/spreadsheets/d/'+sheetId;
+      document.getElementById('drive-lnk').href=result.folderUrl||'#';
+      if(result.sheetUrl){
+        document.getElementById('sheet-lnk').href=result.sheetUrl;
       }else{
         document.getElementById('sheet-lnk').classList.add('hidden');
       }
@@ -1152,9 +961,9 @@ async function run(){
 
   }catch(e){
     setProg(0,'');
-    const msg = (e && e.message) ? e.message : String(e);
-    const friendly = /failed to fetch|networkerror|load failed/i.test(msg)
-      ? 'Falha de rede — verifique sua conexão com a internet e tente novamente. ('+msg+')'
+    const msg=(e&&e.message)?e.message:String(e);
+    const friendly=/failed to fetch|networkerror|load failed/i.test(msg)
+      ? 'Falha de rede — verifique sua conexão com a internet e tente novamente.'
       : msg;
     log('ERRO: '+friendly,'er');
     toast('Erro: '+friendly,'err');
