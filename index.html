@@ -282,7 +282,7 @@ const SHEET_NAME = "Registros_Contratos_Conceitualle";
 //      Quem tem acesso: "Qualquer pessoa"
 //   5) Autorize quando pedir (Drive + Gmail)
 //   6) Copie a URL gerada e cole entre as aspas abaixo:
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTWv3BxaAMCOnlJBBStIlF8HPZ8d5087-ZDDXPdsTlyOzHBEe2iA7HlRBRVPZBV7KJ/exec";
+const APPS_SCRIPT_URL = "";
 
 // E-mail que recebe a notificação de novo contrato (com PDF anexo)
 const MAIL_TO = "sfarinajr@gmail.com";
@@ -299,24 +299,83 @@ const TMPL_URLS = {
 let S = { clinica: null, locatarios: 1, fiadores: 1, _token: null, _tokenExp: 0 };
 
 // ── Comunicação com Apps Script ──────────────────────────────
-async function postToScript(payload) {
-  if (!APPS_SCRIPT_URL) throw new Error('APPS_SCRIPT_URL não configurado (veja o topo do <script>).');
-  const r = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
-    redirect: 'follow'
-  });
-  if (!r.ok) throw new Error('HTTP '+r.status+' do servidor');
-  const data = await r.json();
-  return data;
+function _validateScriptUrl(url){
+  if(!url) return 'APPS_SCRIPT_URL está vazio. Cole o URL da implementação no topo do <script>.';
+  // Aceita /exec ou /exec?... (URL real). Rejeita /dev (somente para o autor do script).
+  if(/\/dev(\?|$|\b)/.test(url)){
+    return 'O URL termina em /dev (apenas para o autor). Você precisa usar o URL da '+
+           'IMPLEMENTAÇÃO publicada (termina em /exec). Em script.google.com → Implementar → Gerenciar implementações.';
+  }
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/.test(url)){
+    return 'URL do Apps Script parece inválido. Deve começar com '+
+           'https://script.google.com/macros/s/SEU_ID/exec';
+  }
+  return null;
 }
+
+async function postToScript(payload) {
+  const v = _validateScriptUrl(APPS_SCRIPT_URL);
+  if (v) throw new Error(v);
+
+  let r;
+  try {
+    // Form-encoded é mais compatível com o redirect que o Apps Script faz
+    // (de script.google.com → script.googleusercontent.com).
+    r = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: 'payload=' + encodeURIComponent(JSON.stringify(payload)),
+      redirect: 'follow',
+      cache: 'no-store'
+    });
+  } catch (netErr) {
+    const fileMode = (location.protocol === 'file:');
+    throw new Error(
+      'Falha ao conectar ao Apps Script.' +
+      (fileMode ? ' Esta página foi aberta como arquivo local (file://) — '+
+                  'isso bloqueia chamadas para o Google. Hospede o HTML em http(s) '+
+                  '(GitHub Pages, Netlify, ou abra via servidor local).' : '') +
+      ' Verifique também: (1) se o URL termina em /exec; '+
+      '(2) se a implementação está como "Quem tem acesso: Qualquer pessoa"; '+
+      '(3) se você re-implantou depois da última edição do script. '+
+      'Detalhe técnico: ' + netErr.message
+    );
+  }
+
+  let text = '';
+  try { text = await r.text(); } catch(_) {}
+
+  if (!r.ok) {
+    throw new Error('Servidor retornou HTTP '+r.status+'. Trecho: '+text.slice(0,300));
+  }
+  // Quando a implementação não está como "Qualquer pessoa", o Google devolve uma
+  // página HTML de login ao invés do JSON do script.
+  const trimmed = (text||'').trim();
+  if (!trimmed || trimmed.charAt(0) !== '{') {
+    throw new Error(
+      'O Apps Script devolveu uma resposta não-JSON. Causa mais provável: a '+
+      'implementação NÃO está como "Quem tem acesso: Qualquer pessoa", OU o URL aponta '+
+      'para uma versão antiga (re-implante depois de editar o código). '+
+      'Trecho recebido: ' + trimmed.slice(0,200)
+    );
+  }
+  return JSON.parse(trimmed);
+}
+
 async function getFromScript(params) {
-  if (!APPS_SCRIPT_URL) return null;
-  const qs = new URLSearchParams(params).toString();
-  const r = await fetch(APPS_SCRIPT_URL+'?'+qs, { method:'GET', redirect:'follow' });
-  if (!r.ok) return null;
-  return r.json();
+  if (_validateScriptUrl(APPS_SCRIPT_URL)) return null;
+  try {
+    const qs = new URLSearchParams(params).toString();
+    const r = await fetch(APPS_SCRIPT_URL+'?'+qs, { method:'GET', redirect:'follow', cache:'no-store' });
+    if (!r.ok) return null;
+    const text = await r.text();
+    const trimmed = (text||'').trim();
+    if (!trimmed || trimmed.charAt(0) !== '{') return null;
+    return JSON.parse(trimmed);
+  } catch(e) {
+    console.log('[Contratos] getFromScript:', e.message);
+    return null;
+  }
 }
 function bufToB64(buf) {
   const bytes = new Uint8Array(buf);
@@ -997,6 +1056,16 @@ async function ensureRowsLoaded(){
   _rowsLoaded = true;
   try { await loadExistingRows(); } catch(e){ console.log('[Contratos] bootstrap:',e.message); }
 }
+
+// Aviso ao abrir via file:// (CORS bloqueia chamadas ao Google)
+window.addEventListener('DOMContentLoaded', function(){
+  if (location.protocol === 'file:') {
+    setTimeout(function(){
+      toast('⚠️ Esta página foi aberta como arquivo local (file://). O envio ao Google '+
+            'pode falhar por CORS. Hospede no GitHub Pages ou abra via servidor local.','err');
+    }, 800);
+  }
+});
 
 let _tt;
 function toast(msg,type='ok'){
