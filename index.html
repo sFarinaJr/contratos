@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contratos de Locação – Consultórios</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--gold:#c9a84c;--gold-light:#e8c97a;--gold-dark:#8a6520;--dark:#0d0d0d;--dark2:#1a1a1a;--dark3:#252525;--dark4:#303030;--cream:#f5f0e8;--text:#e8e0d0;--muted:#9a8f7a;--border:rgba(201,168,76,0.25);--r:12px;--tr:0.3s cubic-bezier(0.4,0,0.2,1)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -233,6 +232,14 @@ select option{background:var(--dark3)}
         </div>
         <div class="logbox" id="logbox"></div>
       </div>
+
+      <!-- Mensagem final de sucesso (aparece embaixo do log, sem botões) -->
+      <div id="success-msg" class="hidden" style="margin-top:22px;padding:24px;background:rgba(109,191,103,.08);border:1px solid rgba(109,191,103,.4);border-radius:10px;text-align:center;animation:fadeUp .5s ease both">
+        <div style="font-size:2.4rem;margin-bottom:10px">🎉</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:6px">Contrato gerado com sucesso!</div>
+        <div style="color:var(--muted);font-size:.92rem;font-weight:300">Tudo certo — os arquivos foram salvos e a notificação foi enviada por e-mail.</div>
+      </div>
+
       <div class="brow" id="gen-row">
         <button class="btn btn-g" onclick="goStep(4)">← Voltar</button>
         <button class="btn btn-p" id="btn-gen" onclick="run()">🚀 Gerar Contrato</button>
@@ -240,22 +247,6 @@ select option{background:var(--dark3)}
     </div>
   </div>
 
-  <!-- SUCCESS -->
-  <div id="p-suc" class="hidden">
-    <div class="card">
-      <div class="suc">
-        <div class="sico">🎉</div>
-        <h2>Contrato Gerado!</h2>
-        <p id="suc-msg"></p>
-        <p id="suc-folder" style="color:var(--gold-light);font-weight:500;margin-top:8px"></p>
-        <div style="margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <a id="drive-lnk" href="#" target="_blank" class="btn btn-p">📁 Abrir Pasta no Drive</a>
-          <a id="sheet-lnk" href="#" target="_blank" class="btn btn-g">📊 Ver Planilha de Registros</a>
-          <button class="btn btn-g" onclick="resetApp()">+ Novo Contrato</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 <script>
 // ═══════════════════════════════════════════════════════════════
@@ -282,7 +273,7 @@ const SHEET_NAME = "Registros_Contratos_Conceitualle";
 //      Quem tem acesso: "Qualquer pessoa"
 //   5) Autorize quando pedir (Drive + Gmail)
 //   6) Copie a URL gerada e cole entre as aspas abaixo:
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaxy-6uRGE4mcJ-e9_oYMSjPCTyzdrD66zh1tHq724l0UzhawDXBT3gt4aYKjRTi9p/exec";
+const APPS_SCRIPT_URL = "";
 
 // E-mail que recebe a notificação de novo contrato (com PDF anexo)
 const MAIL_TO = "sfarinajr@gmail.com";
@@ -638,10 +629,36 @@ async function fillDocx(locs,fids,c){
     const p=paraOf(x,m); return p?x.slice(0,p.s)+x.slice(p.e):x;
   }
 
-  if(S.locatarios<2) xml=removeBlock(xml,'{{LOCATARIO 2_INICIO}}','{{LOCATARIO 2_FIM}}');
-  else{ xml=stripM(xml,'{{LOCATARIO 2_INICIO}}'); xml=stripM(xml,'{{LOCATARIO 2_FIM}}'); }
-  if(S.locatarios<3) xml=removeBlock(xml,'{{LOCATARIO 3_INICIO}}','{{LOCATARIO 3_FIM}}');
-  else{ xml=stripM(xml,'{{LOCATARIO 3_INICIO}}'); xml=stripM(xml,'{{LOCATARIO 3_FIM}}'); }
+  // ── Condicionais de blocos: locatário/fiador 2 e 3 ────────────
+  // Tenta múltiplas grafias (LOCATARIO/locatario, FIADOR/Fiador/fiador)
+  // para casar com a tag exata que estiver no template.
+  function applyCond(xml, type, num, include){
+    const variants = Array.from(new Set([
+      type, type.toUpperCase(), type.toLowerCase(),
+      type[0].toUpperCase()+type.slice(1).toLowerCase()
+    ]));
+    for (const t of variants) {
+      const ini = '{{'+t+' '+num+'_INICIO}}';
+      const fim = '{{'+t+' '+num+'_FIM}}';
+      if (xml.indexOf(ini) >= 0 && xml.indexOf(fim) >= 0) {
+        if (include) {
+          xml = stripM(xml, ini);
+          xml = stripM(xml, fim);
+        } else {
+          xml = removeBlock(xml, ini, fim);
+        }
+        return xml;
+      }
+    }
+    return xml;
+  }
+
+  // Locatários 2 e 3
+  xml = applyCond(xml, 'LOCATARIO', 2, S.locatarios >= 2);
+  xml = applyCond(xml, 'LOCATARIO', 3, S.locatarios >= 3);
+  // Fiadores 2 e 3 (tag em minúsculas no template)
+  xml = applyCond(xml, 'fiador',    2, S.fiadores  >= 2);
+  xml = applyCond(xml, 'fiador',    3, S.fiadores  >= 3);
 
   Object.entries(map).forEach(([tag,val])=>{
     const esc=String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -662,60 +679,6 @@ function loadScript(src){
     s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Script failed: '+src));
     document.head.appendChild(s);
   });
-}
-
-// ── PDF ────────────────────────────────────────────────────────
-async function genPDF(locs,fids,c){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const CN=S.clinica===1?'Odonto Conceitualle':'Face Instituto Odontológico';
-  const M=18,PW=174; let y=M;
-  const chk=(e=0)=>{if(y+e>275){doc.addPage();y=M;}};
-  const txt=(t,sz,b,rgb)=>{
-    doc.setFontSize(sz);doc.setFont('helvetica',b?'bold':'normal');doc.setTextColor(...rgb);
-    doc.splitTextToSize(String(t||''),PW).forEach(l=>{chk(sz*.42);doc.text(l,M,y);y+=sz*.42;});
-    y+=1.5;
-  };
-  const sec=t=>{
-    y+=4;chk(10);
-    doc.setFillColor(28,24,14);doc.rect(M-2,y-5.5,PW+4,9,'F');
-    txt(t,11,true,[201,168,76]);
-  };
-  const fld=(lbl,val)=>{
-    chk(7);
-    doc.setFontSize(9.5);doc.setFont('helvetica','bold');doc.setTextColor(140,130,100);
-    doc.text(lbl+':',M,y);
-    doc.setFont('helvetica','normal');doc.setTextColor(215,205,185);
-    const lines=doc.splitTextToSize(String(val||'—'),PW-40);
-    lines.forEach((l,i)=>{if(i>0){chk();y+=4.5;}doc.text(l,M+40,y);});
-    y+=Math.max(lines.length*4.5,5.5);
-  };
-  y+=6;
-  txt('CONTRATO DE LOCAÇÃO DE CONSULTÓRIO ODONTOLÓGICO',15,true,[201,168,76]);
-  txt(CN,11,false,[180,160,100]);y+=4;
-  sec('DADOS DO CONTRATO');
-  fld('Clínica',CN);fld('Data de início',fmtDLong(c.di));
-  fld('Vencimento','Todo dia '+c.venc+' de cada mês');
-  fld('Valor mensal','R$ '+c.val);fld('Prazo mínimo',c.prazo);
-  locs.forEach((l,i)=>{
-    sec('LOCATÁRIO '+(i+1));
-    fld('Nome',l.nome);fld('RG/CRO',l.rg);fld('CPF',l.cpf);
-    fld('WhatsApp',l.whats);fld('E-mail',l.email);fld('Endereço',l.end);
-    fld('CEP / Cidade / UF',l.cep+' — '+l.cidade+' / '+l.estado);
-  });
-  fids.forEach((f,i)=>{
-    sec('FIADOR '+(i+1));
-    fld('Nome',f.nome);fld('RG',f.rg);fld('CPF',f.cpf);
-    fld('WhatsApp',f.whats);fld('E-mail',f.email);fld('Endereço',f.end);
-    fld('CEP / Cidade / UF',f.cep+' — '+f.cidade+' / '+f.estado);
-  });
-  y+=20;chk(20);
-  doc.setDrawColor(100,90,60);
-  doc.line(M,y,M+70,y);doc.line(M+100,y,M+170,y);y+=5;
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(140,130,100);
-  doc.text('LOCADOR',M+15,y);doc.text('LOCATÁRIO',M+115,y);y+=8;
-  doc.text('Cuiabá-MT, '+fmtDLong(c.di),M,y);
-  return doc.output('arraybuffer');
 }
 
 // ── Progress / Log ─────────────────────────────────────────────
@@ -900,23 +863,10 @@ async function run(){
     const docxBuf=await fillDocx(locs,fids,contrato);
     log('Documento DOCX preenchido','ok');
 
-    setProg(25,'Gerando PDF...');
-    log('Gerando PDF do contrato...');
-    const pdfBuf=await genPDF(locs,fids,contrato);
-    log('PDF gerado','ok');
-
     setProg(40,'Preparando arquivos...');
+    // O PDF não é mais gerado aqui — o Apps Script converte o DOCX preenchido
+    // em PDF (preservando layout e estilos do template).
     const files=[];
-    files.push({
-      name: folderName+'_contrato.docx',
-      mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      base64: bufToB64(docxBuf)
-    });
-    files.push({
-      name: folderName+'.pdf',
-      mime: 'application/pdf',
-      base64: bufToB64(pdfBuf)
-    });
 
     // Anexos cumulativos do usuário
     const allP=[
@@ -975,6 +925,11 @@ async function run(){
       action:'submitContract',
       sheetName: SHEET_NAME,
       folderName: folderName,
+      // DOCX vai separado para que o Apps Script converta para PDF
+      docxBase64: bufToB64(docxBuf),
+      docxFileName: folderName+'_contrato.docx',
+      pdfFileName: folderName+'.pdf',
+      // anexos do usuário
       files: files,
       headers: headers,
       row: row,
@@ -985,9 +940,7 @@ async function run(){
               'Locatário 1: '+locs[0].nome+'\n'+
               'Clínica: '+cn+'\n'+
               'Data: '+now+'\n\n'+
-              'O PDF do contrato está em anexo.',
-        pdfFileName: folderName+'.pdf',
-        pdfBase64: bufToB64(pdfBuf)
+              'O PDF (gerado a partir do template) está em anexo.'
       }
     };
 
@@ -995,28 +948,20 @@ async function run(){
     if(!result || !result.ok) throw new Error((result&&result.error)||'Falha desconhecida no servidor');
 
     setProg(100,'✓ Concluído com sucesso!');
-    log((2+totalUserDocs)+' arquivo(s) salvos no Google Drive','ok');
+    const totalSaved = (result.filesUploaded != null) ? result.filesUploaded : (2+totalUserDocs);
+    log(totalSaved+' arquivo(s) salvos no Google Drive','ok');
+    if(result.pdfGenerated) log('PDF do contrato gerado a partir do template','ok');
     if(result.sheetUrl) log('Registrado na planilha de contratos','ok');
     if(result.emailSent) log('E-mail de notificação enviado','ok');
     log('🎉 Processo finalizado!','ok');
 
     try{ localStorage.setItem('contratos_lastUser', locs[0].nome||''); }catch(e){}
 
-    setTimeout(()=>{
-      ['p1','p2','p3','p4','p5'].forEach(id=>{
-        const el=document.getElementById(id);if(el) el.classList.add('hidden');
-      });
-      document.getElementById('p-suc').classList.remove('hidden');
-      document.getElementById('suc-msg').textContent=(2+totalUserDocs)+' arquivo(s) salvos com sucesso.';
-      document.getElementById('suc-folder').textContent='📁 Pasta: "'+folderName+'"';
-      document.getElementById('drive-lnk').href=result.folderUrl||'#';
-      if(result.sheetUrl){
-        document.getElementById('sheet-lnk').href=result.sheetUrl;
-      }else{
-        document.getElementById('sheet-lnk').classList.add('hidden');
-      }
-      document.querySelectorAll('.si').forEach(s=>{s.classList.remove('active');s.classList.add('done');});
-    },800);
+    // Mostra mensagem de sucesso EMBAIXO do log (sem botões / sem links externos)
+    document.getElementById('success-msg').classList.remove('hidden');
+    // Esconde os botões Voltar/Gerar para evitar reenvio acidental
+    document.getElementById('gen-row').classList.add('hidden');
+    document.querySelectorAll('.si').forEach(s=>{s.classList.remove('active');s.classList.add('done');});
 
   }catch(e){
     setProg(0,'');
@@ -1034,16 +979,16 @@ async function run(){
 
 // ── Reset ──────────────────────────────────────────────────────
 function resetApp(){
-  S={clinica:null,locatarios:1,fiadores:1,_token:S._token,_tokenExp:S._tokenExp};
+  S={clinica:null,locatarios:1,fiadores:1};
   window._FILES={};
   ['vl-locatarios','vl-fiadores'].forEach(id=>document.getElementById(id).textContent='1');
   ['cl1','cl2'].forEach(id=>document.getElementById(id).classList.remove('sel'));
   document.getElementById('bp1').disabled=true;
-  document.getElementById('p-suc').classList.add('hidden');
   document.getElementById('prog-sec').classList.add('hidden');
+  const sm=document.getElementById('success-msg'); if(sm) sm.classList.add('hidden');
   document.getElementById('btn-gen').disabled=false;
-  document.getElementById('gen-row').style.opacity='';
-  document.getElementById('gen-row').style.pointerEvents='';
+  const gr=document.getElementById('gen-row');
+  if(gr){ gr.classList.remove('hidden'); gr.style.opacity=''; gr.style.pointerEvents=''; }
   document.getElementById('logbox').innerHTML='';
   goStep(1);
 }
