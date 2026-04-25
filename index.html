@@ -399,7 +399,13 @@ function goStep(n) {
     const el=document.getElementById(id);
     if(el) el.classList.toggle('hidden',i+1!==n);
   });
-  document.getElementById('p-suc').classList.add('hidden');
+  // (removido o reset do p-suc — esse painel não existe mais nesta versão)
+  // Esconde a mensagem de sucesso ao mudar de passo
+  const _sm = document.getElementById('success-msg');
+  if (_sm) _sm.classList.add('hidden');
+  // Reexibe a barra de botões caso esteja oculta após sucesso
+  const _gr = document.getElementById('gen-row');
+  if (_gr) _gr.classList.remove('hidden');
   for(let i=1;i<=5;i++){
     document.getElementById('si'+i).classList.toggle('active',i===n);
     document.getElementById('si'+i).classList.toggle('done',i<n);
@@ -556,15 +562,55 @@ function collectP(prefix,count){
 
 // ── Review ─────────────────────────────────────────────────────
 function buildReview(){
-  const cn=S.clinica===1?'Odonto Conceitualle':'Face Instituto Odontológico';
-  const rv=(l,v)=>'<div class="rv"><div class="rvl">'+l+'</div><div class="rvv">'+(v||'—')+'</div></div>';
-  document.getElementById('review-a').innerHTML=
-    '<div class="rbox"><div class="rboxt">🏥 Resumo do Contrato</div><div class="rvg">'+
-    rv('Clínica',cn)+rv('Início',fmtD(gv('f-di')))+rv('Vencimento dia',gv('f-venc'))+
-    rv('Valor Mensal','R$ '+gv('f-val'))+rv('Prazo mínimo',gv('f-prazo'))+
-    rv('Locatários',S.locatarios)+rv('Fiadores',S.fiadores)+
-    rv('Pasta no Drive',gv('loc-1-nome')||'—')+
-    '</div></div>';
+  const cn = S.clinica===1 ? 'Odonto Conceitualle' : 'Face Instituto Odontológico';
+  const esc = s => String(s==null?'':s).replace(/[<>&"']/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;","'":"&#39;"}[c]));
+  const rv = (l,v) => '<div class="rv"><div class="rvl">'+l+'</div><div class="rvv">'+(esc(v)||'—')+'</div></div>';
+
+  function personBox(role, idx, prefix){
+    const filesArr = (window._FILES && window._FILES[prefix+'-'+idx]) || [];
+    const filesTxt = filesArr.length
+      ? filesArr.length + ' arquivo(s): ' + filesArr.map(f=>f.name).join(', ')
+      : '— nenhum';
+    return ''
+      + '<div class="rbox"><div class="rboxt">'+role+' '+idx+'</div>'
+      + '<div class="rvg">'
+      +   rv('Nome',     gv(prefix+'-'+idx+'-nome'))
+      +   rv('CPF',      gv(prefix+'-'+idx+'-cpf'))
+      +   rv('RG / CRO', gv(prefix+'-'+idx+'-rg'))
+      +   rv('WhatsApp', gv(prefix+'-'+idx+'-whats'))
+      +   rv('E-mail',   gv(prefix+'-'+idx+'-email'))
+      +   rv('Endereço', gv(prefix+'-'+idx+'-end'))
+      +   rv('CEP',      gv(prefix+'-'+idx+'-cep'))
+      +   rv('Cidade',   gv(prefix+'-'+idx+'-cidade'))
+      +   rv('UF',       gv(prefix+'-'+idx+'-estado'))
+      +   '<div class="rv" style="grid-column:1/-1"><div class="rvl">Documentos anexados</div><div class="rvv" style="font-weight:400;color:'+(filesArr.length?'var(--gold-light)':'var(--muted)')+'">'+esc(filesTxt)+'</div></div>'
+      + '</div></div>';
+  }
+
+  let html = ''
+    + '<div class="rbox"><div class="rboxt">🏥 Dados do Contrato</div>'
+    +   '<div class="rvg">'
+    +     rv('Clínica',         cn)
+    +     rv('Data de início',  fmtD(gv('f-di')))
+    +     rv('Vencimento (dia)',gv('f-venc'))
+    +     rv('Valor mensal',    'R$ '+gv('f-val'))
+    +     rv('Prazo mínimo',    gv('f-prazo'))
+    +     rv('Nº de Locatários',S.locatarios)
+    +     rv('Nº de Fiadores',  S.fiadores)
+    +   '</div>'
+    + '</div>';
+
+  for (let i=1; i<=S.locatarios; i++) html += personBox('👤 Locatário', i, 'loc');
+  for (let i=1; i<=S.fiadores;   i++) html += personBox('🛡️ Fiador',    i, 'fid');
+
+  html += ''
+    + '<div style="margin-top:14px;padding:12px 16px;background:rgba(201,168,76,.06);'
+    +   'border-left:3px solid var(--gold);border-radius:4px;font-size:.85rem;color:var(--muted)">'
+    +   '⚠️ Confira todos os dados acima. Se algo estiver errado, clique em <strong>Voltar</strong> '
+    +   'e corrija antes de gerar o contrato.'
+    + '</div>';
+
+  document.getElementById('review-a').innerHTML = html;
 }
 function fmtD(d){
   if(!d) return '';
@@ -957,9 +1003,7 @@ async function run(){
 
     try{ localStorage.setItem('contratos_lastUser', locs[0].nome||''); }catch(e){}
 
-    // Mostra mensagem de sucesso EMBAIXO do log (sem botões / sem links externos)
     document.getElementById('success-msg').classList.remove('hidden');
-    // Esconde os botões Voltar/Gerar para evitar reenvio acidental
     document.getElementById('gen-row').classList.add('hidden');
     document.querySelectorAll('.si').forEach(s=>{s.classList.remove('active');s.classList.add('done');});
 
