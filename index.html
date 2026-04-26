@@ -590,7 +590,8 @@ function buildReview(){
     + '</div></div>';
   for (let i=1; i<=S.locatarios; i++) html += personBox('👤 Locatário', i, 'loc');
   for (let i=1; i<=S.fiadores;   i++) html += personBox('🛡️ Fiador',    i, 'fid');
-  html += '<div style="margin-top:14px;padding:12px 16px;background:rgba(201,168,76,.06);border-left:3px solid var(--gold);border-radius:4px;font-size:.85rem;color:var(--muted)">⚠️ Confira todos os dados acima. Se algo estiver errado, clique em <strong>Voltar</strong> e corrija antes de gerar o contrato.</div>';
+  html += '<div id="review-warning" style="margin-top:14px;padding:12px 16px;background:rgba(201,168,76,.06);border-left:3px solid var(--gold);border-radius:4px;font-size:.85rem;color:var(--muted)">⚠️ Confira todos os dados acima. Se algo estiver errado, clique em <strong>Voltar</strong> e corrija antes de gerar o contrato.</div>'
+       + '<div id="wait-msg" class="hidden" style="margin-top:14px;padding:20px 16px;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.45);border-radius:8px;font-size:1.1rem;font-weight:700;color:var(--gold-light);text-align:center;letter-spacing:.02em">⏳ Não saia dessa página até o processo terminar. AGUARDE...</div>';
   document.getElementById('review-a').innerHTML = html;
 }
 function fmtD(d){
@@ -764,6 +765,9 @@ async function run(){
   const btn=document.getElementById('btn-gen');
   btn.disabled=true;
   document.getElementById('prog-sec').classList.remove('hidden');
+  // Esconde aviso "Confira os dados" e mostra "AGUARDE..."
+  const _rw = document.getElementById('review-warning'); if (_rw) _rw.classList.add('hidden');
+  const _wm = document.getElementById('wait-msg');       if (_wm) _wm.classList.remove('hidden');
   document.getElementById('gen-row').style.opacity='0.5';
   document.getElementById('gen-row').style.pointerEvents='none';
   document.getElementById('logbox').innerHTML='';
@@ -778,8 +782,6 @@ async function run(){
     log('Template carregado ('+(tmplBuf.byteLength/1024).toFixed(1)+' KB)','ok');
 
     setProg(25,'Preparando dados...');
-    // Mapa de substituições — Apps Script aplica via DocumentApp (find/replace
-    // no Google Doc convertido), o que é 100% confiável.
     const replacements = {
       '{{vencimento}}':    contrato.venc,
       '{{valorAluguel}}':  contrato.val,
@@ -809,7 +811,6 @@ async function run(){
       replacements['{{emailFiador'   +i+'}}']= f.email  || '';
       replacements['{{whatsFiador'   +i+'}}']= f.whats  || '';
     }
-    // Quais blocos condicionais devem ser MANTIDOS (true) ou removidos (false)
     const conditions = {
       'LOCATARIO 2': S.locatarios >= 2,
       'LOCATARIO 3': S.locatarios >= 3,
@@ -873,15 +874,12 @@ async function run(){
       action:'submitContract',
       sheetName: SHEET_NAME,
       folderName: folderName,
-      // Envia o TEMPLATE original (sem manipulação no navegador) — o Apps Script
-      // abre como Google Doc, aplica replacements via DocumentApp e exporta DOCX+PDF.
       templateBase64:  bufToB64(tmplBuf),
       templateName:    (S.clinica===1?'clinica':'face')+'.docx',
       docxFileName:    folderName+'_contrato.docx',
       pdfFileName:     folderName+'.pdf',
       replacements:    replacements,
       conditions:      conditions,
-      // anexos do usuário
       files: files,
       headers: headers,
       row: row,
@@ -935,11 +933,14 @@ async function run(){
     sm.style.background = bg;
     sm.style.border = '1px solid ' + bd;
     sm.classList.remove('hidden');
+    const _wmEnd = document.getElementById('wait-msg'); if (_wmEnd) _wmEnd.classList.add('hidden');
     document.getElementById('gen-row').classList.add('hidden');
     document.querySelectorAll('.si').forEach(s=>{s.classList.remove('active');s.classList.add('done');});
 
   }catch(e){
     setProg(0,'');
+    const _rwR = document.getElementById('review-warning'); if (_rwR) _rwR.classList.remove('hidden');
+    const _wmR = document.getElementById('wait-msg');       if (_wmR) _wmR.classList.add('hidden');
     const msg=(e&&e.message)?e.message:String(e);
     const friendly=/failed to fetch|networkerror|load failed/i.test(msg)
       ? 'Falha de rede — verifique sua conexão com a internet e tente novamente.'
@@ -956,6 +957,8 @@ async function run(){
 function resetApp(){
   S={clinica:null,locatarios:1,fiadores:1};
   window._FILES={};
+  const _rwReset = document.getElementById('review-warning'); if (_rwReset) _rwReset.classList.remove('hidden');
+  const _wmReset = document.getElementById('wait-msg');       if (_wmReset) _wmReset.classList.add('hidden');
   ['vl-locatarios','vl-fiadores'].forEach(id=>document.getElementById(id).textContent='1');
   ['cl1','cl2'].forEach(id=>document.getElementById(id).classList.remove('sel'));
   document.getElementById('bp1').disabled=true;
