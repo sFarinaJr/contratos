@@ -233,7 +233,6 @@ select option{background:var(--dark3)}
         <div class="logbox" id="logbox"></div>
       </div>
 
-      <!-- Mensagem final (aparece embaixo do log, sem botões) -->
       <div id="success-msg" class="hidden" style="margin-top:22px;padding:24px;border-radius:10px;text-align:center;animation:fadeUp .5s ease both">
         <div id="success-icon" style="font-size:2.4rem;margin-bottom:10px"></div>
         <div id="success-title" style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--cream);margin-bottom:6px"></div>
@@ -563,51 +562,35 @@ function buildReview(){
   const cn = S.clinica===1 ? 'Odonto Conceitualle' : 'Face Instituto Odontológico';
   const esc = s => String(s==null?'':s).replace(/[<>&"']/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;","'":"&#39;"}[c]));
   const rv = (l,v) => '<div class="rv"><div class="rvl">'+l+'</div><div class="rvv">'+(esc(v)||'—')+'</div></div>';
-
   function personBox(role, idx, prefix){
     const filesArr = (window._FILES && window._FILES[prefix+'-'+idx]) || [];
-    const filesTxt = filesArr.length
-      ? filesArr.length + ' arquivo(s): ' + filesArr.map(f=>f.name).join(', ')
-      : '— nenhum';
+    const filesTxt = filesArr.length ? filesArr.length + ' arquivo(s): ' + filesArr.map(f=>f.name).join(', ') : '— nenhum';
     return ''
       + '<div class="rbox"><div class="rboxt">'+role+' '+idx+'</div>'
       + '<div class="rvg">'
-      +   rv('Nome',     gv(prefix+'-'+idx+'-nome'))
-      +   rv('CPF',      gv(prefix+'-'+idx+'-cpf'))
+      +   rv('Nome', gv(prefix+'-'+idx+'-nome'))
+      +   rv('CPF', gv(prefix+'-'+idx+'-cpf'))
       +   rv('RG / CRO', gv(prefix+'-'+idx+'-rg'))
       +   rv('WhatsApp', gv(prefix+'-'+idx+'-whats'))
-      +   rv('E-mail',   gv(prefix+'-'+idx+'-email'))
+      +   rv('E-mail', gv(prefix+'-'+idx+'-email'))
       +   rv('Endereço', gv(prefix+'-'+idx+'-end'))
-      +   rv('CEP',      gv(prefix+'-'+idx+'-cep'))
-      +   rv('Cidade',   gv(prefix+'-'+idx+'-cidade'))
-      +   rv('UF',       gv(prefix+'-'+idx+'-estado'))
+      +   rv('CEP', gv(prefix+'-'+idx+'-cep'))
+      +   rv('Cidade', gv(prefix+'-'+idx+'-cidade'))
+      +   rv('UF', gv(prefix+'-'+idx+'-estado'))
       +   '<div class="rv" style="grid-column:1/-1"><div class="rvl">Documentos anexados</div><div class="rvv" style="font-weight:400;color:'+(filesArr.length?'var(--gold-light)':'var(--muted)')+'">'+esc(filesTxt)+'</div></div>'
       + '</div></div>';
   }
-
   let html = ''
     + '<div class="rbox"><div class="rboxt">🏥 Dados do Contrato</div>'
-    +   '<div class="rvg">'
-    +     rv('Clínica',         cn)
-    +     rv('Data de início',  fmtD(gv('f-di')))
-    +     rv('Vencimento (dia)',gv('f-venc'))
-    +     rv('Valor mensal',    'R$ '+gv('f-val'))
-    +     rv('Prazo mínimo',    gv('f-prazo'))
-    +     rv('Nº de Locatários',S.locatarios)
-    +     rv('Nº de Fiadores',  S.fiadores)
-    +   '</div>'
-    + '</div>';
-
+    + '<div class="rvg">'
+    + rv('Clínica', cn) + rv('Data de início', fmtD(gv('f-di')))
+    + rv('Vencimento (dia)', gv('f-venc')) + rv('Valor mensal', 'R$ '+gv('f-val'))
+    + rv('Prazo mínimo', gv('f-prazo'))
+    + rv('Nº de Locatários', S.locatarios) + rv('Nº de Fiadores', S.fiadores)
+    + '</div></div>';
   for (let i=1; i<=S.locatarios; i++) html += personBox('👤 Locatário', i, 'loc');
   for (let i=1; i<=S.fiadores;   i++) html += personBox('🛡️ Fiador',    i, 'fid');
-
-  html += ''
-    + '<div style="margin-top:14px;padding:12px 16px;background:rgba(201,168,76,.06);'
-    +   'border-left:3px solid var(--gold);border-radius:4px;font-size:.85rem;color:var(--muted)">'
-    +   '⚠️ Confira todos os dados acima. Se algo estiver errado, clique em <strong>Voltar</strong> '
-    +   'e corrija antes de gerar o contrato.'
-    + '</div>';
-
+  html += '<div style="margin-top:14px;padding:12px 16px;background:rgba(201,168,76,.06);border-left:3px solid var(--gold);border-radius:4px;font-size:.85rem;color:var(--muted)">⚠️ Confira todos os dados acima. Se algo estiver errado, clique em <strong>Voltar</strong> e corrija antes de gerar o contrato.</div>';
   document.getElementById('review-a').innerHTML = html;
 }
 function fmtD(d){
@@ -619,110 +602,6 @@ function fmtDLong(d){
   const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const [y,m,day]=d.split('-');
   return day+' de '+months[parseInt(m)-1]+' de '+y;
-}
-
-// ── DOCX Fill ─────────────────────────────────────────────────
-async function fillDocx(locs,fids,c){
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
-  const url = S.clinica===1 ? TMPL_URLS.clinica : TMPL_URLS.face;
-  // Adiciona ?t=timestamp para evitar cache do navegador (assim qualquer
-  // alteração no .docx é refletida na próxima geração de contrato).
-  const resp = await fetch(url + (url.indexOf('?')>=0?'&':'?') + 't=' + Date.now(), {cache:'no-store'});
-  if(!resp.ok) throw new Error('Não foi possível carregar o template "'+url+'": HTTP '+resp.status);
-  const bytes = new Uint8Array(await resp.arrayBuffer());
-  const zip=await JSZip.loadAsync(bytes.buffer);
-  let xml=await zip.file('word/document.xml').async('string');
-
-  const map={};
-  map['{{vencimento}}']=c.venc;
-  map['{{valorAluguel}}']=c.val;
-  map['{{prazoContrato}}']=c.prazo;
-  map['{{inicioContrato}}']=fmtDLong(c.di);
-  map['{{ASSINATURAS}}']='' ;
-  for(let i=1;i<=3;i++){
-    const l=locs[i-1]||{}, f=fids[i-1]||{};
-    map['{{nomeLoc'+i+'}}']=l.nome||'';
-    map['{{rgLoc'+i+'}}']=l.rg||'';
-    map['{{cpfLoc'+i+'}}']=l.cpf||'';
-    map['{{enderecoLoc'+i+'}}']=l.end||'';
-    map['{{cepLoc'+i+'}}']=l.cep||'';
-    map['{{cidadeLoc'+i+'}}']=l.cidade||'';
-    map['{{estadoLoc'+i+'}}']=l.estado||'';
-    map['{{emailLoc'+i+'}}']=l.email||'';
-    map['{{whatsLoc'+i+'}}']=l.whats||'';
-    map['{{nomeFiador'+i+'}}']=f.nome||'';
-    map['{{rgFiador'+i+'}}']=f.rg||'';
-    map['{{cpfFiador'+i+'}}']=f.cpf||'';
-    map['{{enderecoFiador'+i+'}}']=f.end||'';
-    map['{{cepFiador'+i+'}}']=f.cep||'';
-    map['{{cidadeFiador'+i+'}}']=f.cidade||'';
-    map['{{estadoFiador'+i+'}}']=f.estado||'';
-    map['{{emailFiador'+i+'}}']=f.email||'';
-    map['{{whatsFiador'+i+'}}']=f.whats||'';
-  }
-
-  function paraOf(x,marker){
-    const pos=x.indexOf(marker); if(pos===-1) return null;
-    return {s:x.lastIndexOf('<w:p ',pos), e:x.indexOf('</w:p>',pos)+'</w:p>'.length};
-  }
-  function removeBlock(x,sm,em){
-    const a=paraOf(x,sm),b=paraOf(x,em);
-    return(!a||!b)?x:x.slice(0,a.s)+x.slice(b.e);
-  }
-  function stripM(x,m){
-    const p=paraOf(x,m); return p?x.slice(0,p.s)+x.slice(p.e):x;
-  }
-
-  // ── Condicionais de blocos: locatário/fiador 2 e 3 ────────────
-  // Tenta múltiplas grafias (LOCATARIO/locatario, FIADOR/Fiador/fiador)
-  // para casar com a tag exata que estiver no template.
-  function applyCond(xml, type, num, include){
-    const variants = Array.from(new Set([
-      type, type.toUpperCase(), type.toLowerCase(),
-      type[0].toUpperCase()+type.slice(1).toLowerCase()
-    ]));
-    for (const t of variants) {
-      const ini = '{{'+t+' '+num+'_INICIO}}';
-      const fim = '{{'+t+' '+num+'_FIM}}';
-      if (xml.indexOf(ini) >= 0 && xml.indexOf(fim) >= 0) {
-        if (include) {
-          xml = stripM(xml, ini);
-          xml = stripM(xml, fim);
-        } else {
-          xml = removeBlock(xml, ini, fim);
-        }
-        return xml;
-      }
-    }
-    return xml;
-  }
-
-  // Locatários 2 e 3
-  xml = applyCond(xml, 'LOCATARIO', 2, S.locatarios >= 2);
-  xml = applyCond(xml, 'LOCATARIO', 3, S.locatarios >= 3);
-  // Fiadores 2 e 3 (tag em minúsculas no template)
-  xml = applyCond(xml, 'fiador',    2, S.fiadores  >= 2);
-  xml = applyCond(xml, 'fiador',    3, S.fiadores  >= 3);
-
-  Object.entries(map).forEach(([tag,val])=>{
-    const esc=String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    xml=xml.split(tag).join(esc);
-    try{
-      const chars=Array.from(tag).map(c=>c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
-      xml=xml.replace(new RegExp(chars.join('(?:(?:<[^>]+>)*)'), 'g'), esc);
-    }catch(e){}
-  });
-
-  zip.file('word/document.xml',xml);
-  return zip.generateAsync({type:'arraybuffer',compression:'DEFLATE',compressionOptions:{level:6}});
-}
-function loadScript(src){
-  return new Promise((res,rej)=>{
-    if(document.querySelector('script[src="'+src+'"]')){res();return;}
-    const s=document.createElement('script');
-    s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Script failed: '+src));
-    document.head.appendChild(s);
-  });
 }
 
 // ── Progress / Log ─────────────────────────────────────────────
@@ -810,7 +689,6 @@ function applyRowToForm(row){
   // Reconstrói formulários para garantir os campos antes de preencher
   buildForms('loc-c','Locatário',S.locatarios,'loc');
   buildForms('fid-c','Fiador',S.fiadores,'fid');
-  // Helper: carrega todos os campos de uma pessoa
   function fillPerson(prefix, sheetPrefix, idx, row){
     const p = sheetPrefix + idx + ' ';
     _setVal(prefix+'-'+idx+'-nome',   row[p+'Nome']);
@@ -823,7 +701,6 @@ function applyRowToForm(row){
     _setVal(prefix+'-'+idx+'-cidade', row[p+'Cidade']);
     _setVal(prefix+'-'+idx+'-estado', row[p+'UF']);
   }
-  // Carrega TODOS os locatários e fiadores cadastrados
   for (let i=1; i<=nLoc; i++) fillPerson('loc', 'Loc',  i, row);
   for (let i=1; i<=nFid; i++) fillPerson('fid', 'Fiad', i, row);
   // Reanexa os listeners de busca por nome (foram criados pelo buildForms novo)
@@ -892,14 +769,55 @@ async function run(){
   document.getElementById('logbox').innerHTML='';
 
   try{
-    setProg(10,'Gerando documento DOCX...');
-    log('Preenchendo template do contrato...');
-    const docxBuf=await fillDocx(locs,fids,contrato);
-    log('Documento DOCX preenchido','ok');
+    setProg(10,'Carregando template...');
+    log('Carregando template do GitHub...');
+    const tmplUrl = S.clinica===1 ? TMPL_URLS.clinica : TMPL_URLS.face;
+    const tmplResp = await fetch(tmplUrl + (tmplUrl.indexOf('?')>=0?'&':'?') + 't=' + Date.now(), {cache:'no-store'});
+    if (!tmplResp.ok) throw new Error('Template não encontrado: HTTP '+tmplResp.status);
+    const tmplBuf = await tmplResp.arrayBuffer();
+    log('Template carregado ('+(tmplBuf.byteLength/1024).toFixed(1)+' KB)','ok');
 
-    setProg(40,'Preparando arquivos...');
-    // O PDF não é mais gerado aqui — o Apps Script converte o DOCX preenchido
-    // em PDF (preservando layout e estilos do template).
+    setProg(25,'Preparando dados...');
+    // Mapa de substituições — Apps Script aplica via DocumentApp (find/replace
+    // no Google Doc convertido), o que é 100% confiável.
+    const replacements = {
+      '{{vencimento}}':    contrato.venc,
+      '{{valorAluguel}}':  contrato.val,
+      '{{prazoContrato}}': contrato.prazo,
+      '{{inicioContrato}}':fmtDLong(contrato.di),
+      '{{ASSINATURAS}}':   ''
+    };
+    for (let i=1; i<=3; i++){
+      const l = locs[i-1] || {};
+      const f = fids[i-1] || {};
+      replacements['{{nomeLoc'    +i+'}}']   = l.nome   || '';
+      replacements['{{rgLoc'      +i+'}}']   = l.rg     || '';
+      replacements['{{cpfLoc'     +i+'}}']   = l.cpf    || '';
+      replacements['{{enderecoLoc'+i+'}}']   = l.end    || '';
+      replacements['{{cepLoc'     +i+'}}']   = l.cep    || '';
+      replacements['{{cidadeLoc'  +i+'}}']   = l.cidade || '';
+      replacements['{{estadoLoc'  +i+'}}']   = l.estado || '';
+      replacements['{{emailLoc'   +i+'}}']   = l.email  || '';
+      replacements['{{whatsLoc'   +i+'}}']   = l.whats  || '';
+      replacements['{{nomeFiador'    +i+'}}']= f.nome   || '';
+      replacements['{{rgFiador'      +i+'}}']= f.rg     || '';
+      replacements['{{cpfFiador'     +i+'}}']= f.cpf    || '';
+      replacements['{{enderecoFiador'+i+'}}']= f.end    || '';
+      replacements['{{cepFiador'     +i+'}}']= f.cep    || '';
+      replacements['{{cidadeFiador'  +i+'}}']= f.cidade || '';
+      replacements['{{estadoFiador'  +i+'}}']= f.estado || '';
+      replacements['{{emailFiador'   +i+'}}']= f.email  || '';
+      replacements['{{whatsFiador'   +i+'}}']= f.whats  || '';
+    }
+    // Quais blocos condicionais devem ser MANTIDOS (true) ou removidos (false)
+    const conditions = {
+      'LOCATARIO 2': S.locatarios >= 2,
+      'LOCATARIO 3': S.locatarios >= 3,
+      'fiador 2':    S.fiadores  >= 2,
+      'fiador 3':    S.fiadores  >= 3
+    };
+
+    setProg(40,'Preparando anexos...');
     const files=[];
 
     // Anexos cumulativos do usuário
@@ -931,8 +849,6 @@ async function run(){
     setProg(60,'Enviando contrato para o servidor...');
     log('Enviando contrato e anexos...');
 
-    // Cabeçalhos COMPLETOS — todos os campos para todos os locatários (1-3) e fiadores (1-3),
-    // assim o pré-preenchimento traz todos os dados nas próximas vezes.
     const personCols = ['Nome','CPF','RG','WhatsApp','E-mail','Endereço','CEP','Cidade','UF'];
     const headers = ['Data Registro','Clínica','Início Contrato','Vencimento Dia','Valor Mensal','Prazo Mínimo',
       'Nº Locatários','Nº Fiadores'];
@@ -957,10 +873,14 @@ async function run(){
       action:'submitContract',
       sheetName: SHEET_NAME,
       folderName: folderName,
-      // DOCX vai separado para que o Apps Script converta para PDF
-      docxBase64: bufToB64(docxBuf),
-      docxFileName: folderName+'_contrato.docx',
-      pdfFileName: folderName+'.pdf',
+      // Envia o TEMPLATE original (sem manipulação no navegador) — o Apps Script
+      // abre como Google Doc, aplica replacements via DocumentApp e exporta DOCX+PDF.
+      templateBase64:  bufToB64(tmplBuf),
+      templateName:    (S.clinica===1?'clinica':'face')+'.docx',
+      docxFileName:    folderName+'_contrato.docx',
+      pdfFileName:     folderName+'.pdf',
+      replacements:    replacements,
+      conditions:      conditions,
       // anexos do usuário
       files: files,
       headers: headers,
@@ -983,22 +903,15 @@ async function run(){
     const totalSaved = (result.filesUploaded != null) ? result.filesUploaded : (2+totalUserDocs);
     if(result.folderReused) log('Pasta existente atualizada (arquivos com mesmo nome foram substituídos)','ok');
     log(totalSaved+' arquivo(s) salvos no Google Drive','ok');
-    if(result.pdfGenerated){
-      log('PDF do contrato gerado a partir do template','ok');
-    } else if(result.pdfError){
-      log('⚠️ PDF NÃO foi gerado — '+result.pdfError,'er');
-    }
+    if(result.pdfGenerated){ log('PDF do contrato gerado a partir do template','ok'); }
+    else if(result.pdfError){ log('⚠️ PDF NÃO foi gerado — '+result.pdfError,'er'); }
     if(result.sheetUrl) log('Registrado na planilha de contratos','ok');
-    if(result.emailSent){
-      log('E-mail de notificação enviado','ok');
-    } else if(result.pdfGenerated===false){
-      log('E-mail não enviado (sem PDF anexo)','er');
-    }
+    if(result.emailSent){ log('E-mail de notificação enviado','ok'); }
+    else if(result.pdfGenerated===false){ log('E-mail não enviado (sem PDF anexo)','er'); }
     log('🎉 Processo finalizado!','ok');
 
     try{ localStorage.setItem('contratos_lastUser', locs[0].nome||''); }catch(e){}
 
-    // Define ícone/título/detalhe conforme o resultado real (PDF + e-mail)
     const sm = document.getElementById('success-msg');
     const si = document.getElementById('success-icon');
     const st = document.getElementById('success-title');
