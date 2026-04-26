@@ -91,7 +91,7 @@ select option{background:var(--dark3)}
 .prb{background:var(--dark4);border-radius:999px;height:8px;overflow:hidden;margin-bottom:8px}
 .prf{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:999px;transition:width .4s ease;width:0%}
 .prl{font-size:.8rem;color:var(--muted);text-align:center}
-.logbox{background:#0a0a0a;border:1px solid var(--dark4);border-radius:8px;padding:12px 16px;margin-top:10px;max-height:180px;overflow-y:auto;font-size:.78rem;font-family:monospace;line-height:1.7}
+.logbox{background:#0a0a0a;border:1px solid var(--dark4);border-radius:8px;padding:12px 16px;margin-top:10px;max-height:480px;overflow-y:auto;font-size:.82rem;font-family:monospace;line-height:1.7}
 .logbox .ok{color:#6dbf67}.logbox .er{color:#e05252}.logbox .inf{color:var(--gold-light)}
 .suc{text-align:center;padding:60px 20px}
 .sico{width:80px;height:80px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 24px;animation:pop .5s cubic-bezier(.175,.885,.32,1.275) both}
@@ -105,6 +105,62 @@ select option{background:var(--dark3)}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.err{border-color:#c94c4c;background:#1a0f0f}
 #toast.ok{border-color:var(--gold)}
+
+/* ──────────────────────────────────────────────────────────────
+   MOBILE (≤640px) — layout compacto, fonte 16px nos inputs (evita zoom no iOS)
+   ────────────────────────────────────────────────────────────── */
+@media(max-width:640px){
+  .app{padding:20px 14px 60px}
+  .header{margin-bottom:30px}
+  .hlogo{width:50px;height:50px;font-size:24px;border-radius:14px;margin-bottom:12px}
+  .header h1{font-size:1.45rem;letter-spacing:-.01em}
+  .header p{font-size:.85rem;margin-top:6px}
+  .steps{margin-bottom:28px;gap:0}
+  .si{max-width:none;flex:1;gap:4px}
+  .sc{width:28px;height:28px;font-size:.7rem;border-width:1.5px}
+  .sl{font-size:.5rem;letter-spacing:.04em}
+  .conn{max-width:none;margin-bottom:18px}
+  .card{padding:22px 16px;margin-bottom:16px;border-radius:10px}
+  .ct{font-size:1.1rem;line-height:1.3}
+  .cs{font-size:.82rem;margin-bottom:20px}
+  .clinics{gap:14px}
+  .cc img{height:160px}
+  .ci{padding:12px}
+  .cn{font-size:.9rem}
+  .cb{font-size:.68rem}
+  .ck{width:24px;height:24px;font-size:12px;top:10px;right:10px}
+  .crow{gap:16px;flex-direction:column}
+  .fg, .fg3{grid-template-columns:1fr;gap:14px}
+  .fgrp{gap:5px}
+  .ph{padding:12px 14px}
+  .pb{padding:18px 14px}
+  .pt{font-size:.92rem}
+  .pav{width:30px;height:30px;font-size:.78rem}
+  input, select{font-size:16px;padding:11px 12px}
+  label{font-size:.7rem}
+  .divx{margin:22px 0 16px}
+  .divt{font-size:.65rem}
+  .brow{flex-direction:column-reverse;gap:10px;margin-top:22px}
+  .brow .btn{width:100%;justify-content:center}
+  .btn{padding:13px 22px;font-size:.92rem}
+  .fua{padding:14px}
+  .fui{font-size:1.5rem;margin-bottom:4px}
+  .fut{font-size:.78rem}
+  .rvg{grid-template-columns:1fr;gap:10px}
+  .rbox{padding:14px;margin-bottom:10px}
+  .rboxt{font-size:.7rem;margin-bottom:10px}
+  .logbox{max-height:340px;font-size:.74rem;padding:10px 12px}
+  #toast{left:12px;right:12px;bottom:14px;max-width:none}
+  #success-msg{padding:18px 14px !important}
+  #wait-msg{padding:16px 14px !important;font-size:1rem !important}
+  #review-warning{padding:11px 14px !important;font-size:.8rem !important}
+}
+/* TABLET (641-960px) — refina espaçamentos */
+@media(min-width:641px) and (max-width:960px){
+  .app{padding:32px 20px 70px}
+  .card{padding:28px}
+}
+
 </style>
 </head>
 <body>
@@ -210,6 +266,9 @@ select option{background:var(--dark3)}
     <div class="card">
       <div class="ct">🛡️ Dados dos Fiadores</div>
       <div class="cs">Preencha os dados de cada fiador</div>
+      <div style="margin:14px 0 22px;padding:14px 18px;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.4);border-radius:8px;font-size:.92rem;color:var(--cream);line-height:1.55">
+        <strong style="color:var(--gold-light)">📋 Documentos obrigatórios:</strong> Para garantir a fiança é necessário a comprovação de renda e o último imposto de renda. Esses arquivos devem ser anexados para comprovação.
+      </div>
       <div id="fid-c"></div>
       <div class="brow">
         <button class="btn btn-g" onclick="goStep(3)">← Voltar</button>
@@ -434,7 +493,7 @@ function buildForms(cid,label,count,prefix) {
         <div class="fgrp"><label>RG / CRO *</label>
           <input type="text" id="${prefix}-${i}-rg" placeholder="Ex: 1.234.567-8 SSP/MT"></div>
         <div class="fgrp"><label>CPF *</label>
-          <input type="text" id="${prefix}-${i}-cpf" placeholder="000.000.000-00" oninput="mCPF(this)"></div>
+          <input type="text" id="${prefix}-${i}-cpf" placeholder="000.000.000-00" oninput="mCPF(this)" onblur="validateCPFField(this)"></div>
         <div class="fgrp"><label>WhatsApp</label>
           <input type="text" id="${prefix}-${i}-whats" placeholder="(65) 99999-9999" oninput="mPhone(this)"></div>
         <div class="fgrp"><label>E-mail</label>
@@ -538,6 +597,63 @@ function mPhone(el){
 function mCEP(el){
   let v=el.value.replace(/\D/g,'').substring(0,8);
   el.value=v.replace(/(\d{5})(\d)/,'$1-$2');
+}
+
+// ── Formatação Real (R$ 1.234,56) — robusta a qualquer formato de entrada
+function formatBRL(value){
+  if (value === null || value === undefined || value === '') return '';
+  let str = String(value).trim().replace(/^R\$\s*/i, '');
+  if (!str) return '';
+  let num;
+  if (/,\d{1,2}$/.test(str)) {
+    // formato brasileiro: 1.234,56
+    num = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+  } else if (/^\d+(\.\d{1,2})?$/.test(str)) {
+    // formato com ponto decimal (sem vírgula): 1234.56 ou 1234
+    num = parseFloat(str);
+  } else {
+    // fallback: pega só os dígitos como centavos
+    const digits = str.replace(/\D/g, '');
+    if (!digits) return '';
+    num = parseInt(digits, 10) / 100;
+  }
+  if (isNaN(num)) return '';
+  return num.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// ── Validação de CPF brasileiro (dígito verificador)
+function isValidCPF(cpf){
+  cpf = String(cpf||'').replace(/\D/g, '');
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;        // todos dígitos iguais
+  let sum = 0, rev;
+  for (let i = 0; i < 9; i++) sum += parseInt(cpf.charAt(i),10) * (10 - i);
+  rev = 11 - (sum % 11);
+  if (rev >= 10) rev = 0;
+  if (rev !== parseInt(cpf.charAt(9),10)) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(cpf.charAt(i),10) * (11 - i);
+  rev = 11 - (sum % 11);
+  if (rev >= 10) rev = 0;
+  if (rev !== parseInt(cpf.charAt(10),10)) return false;
+  return true;
+}
+
+// Visual feedback: borda vermelha + tooltip se CPF inválido (chamado no blur)
+function validateCPFField(el){
+  const v = (el.value||'').replace(/\D/g,'');
+  if (!v) {                              // vazio: limpa erro
+    el.style.borderColor='';
+    el.title='';
+    return;
+  }
+  if (v.length === 11 && isValidCPF(v)) {
+    el.style.borderColor='';
+    el.title='';
+  } else {
+    el.style.borderColor='#e05252';
+    el.title='CPF inválido — confira os números';
+  }
 }
 
 // ── Collect ────────────────────────────────────────────────────
@@ -679,7 +795,7 @@ function applyRowToForm(row){
     if(y && m && d) _setVal('f-di',y+'-'+m.padStart(2,'0')+'-'+d.padStart(2,'0'));
   }
   _setVal('f-venc',row['Vencimento Dia']);
-  _setVal('f-val',String(row['Valor Mensal']||'').replace(/^R\$\s*/,''));
+  _setVal('f-val', formatBRL(row['Valor Mensal']));
   _setVal('f-prazo',row['Prazo Mínimo']);
   // Quantidade de partes
   const nLoc=Math.max(1,Math.min(3,parseInt(row['Nº Locatários'])||1));
@@ -750,10 +866,39 @@ function toAB(file){
 async function run(){
   const locs=collectP('loc',S.locatarios);
   const fids=collectP('fid',S.fiadores);
-  if(!locs[0].nome){toast('Preencha o nome do Locatário 1','err');return;}
+  // Validação básica do contrato
   if(!gv('f-di')){toast('Informe a data de início','err');return;}
   if(!gv('f-venc')){toast('Informe o dia de vencimento','err');return;}
   if(!gv('f-val')){toast('Informe o valor do aluguel','err');return;}
+
+  // Validação OBRIGATÓRIA: 1 locatário e 1 fiador completos
+  function validateRequired(p, label){
+    const required = [['nome','Nome'], ['cpf','CPF'], ['rg','RG'], ['end','Endereço'], ['cep','CEP']];
+    for (const [k,name] of required) {
+      if (!p[k] || !String(p[k]).trim()) {
+        toast('Preencha o campo "'+name+'" do '+label,'err');
+        return false;
+      }
+    }
+    if (!isValidCPF(p.cpf)) {
+      toast('CPF inválido em '+label,'err');
+      return false;
+    }
+    return true;
+  }
+  if (!locs[0] || !validateRequired(locs[0], 'Locatário 1')) return;
+  if (!fids[0] || !validateRequired(fids[0], 'Fiador 1')) return;
+  // Verifica também CPFs dos demais locatários/fiadores (se foram preenchidos)
+  for (let i = 1; i < locs.length; i++) {
+    if (locs[i].cpf && !isValidCPF(locs[i].cpf)) {
+      toast('CPF inválido em Locatário '+(i+1),'err'); return;
+    }
+  }
+  for (let i = 1; i < fids.length; i++) {
+    if (fids[i].cpf && !isValidCPF(fids[i].cpf)) {
+      toast('CPF inválido em Fiador '+(i+1),'err'); return;
+    }
+  }
   if(!APPS_SCRIPT_URL){
     toast('Sistema ainda não configurado — veja instruções no topo do <script>.','err');
     return;
@@ -765,7 +910,6 @@ async function run(){
   const btn=document.getElementById('btn-gen');
   btn.disabled=true;
   document.getElementById('prog-sec').classList.remove('hidden');
-  // Esconde aviso "Confira os dados" e mostra "AGUARDE..."
   const _rw = document.getElementById('review-warning'); if (_rw) _rw.classList.add('hidden');
   const _wm = document.getElementById('wait-msg');       if (_wm) _wm.classList.remove('hidden');
   document.getElementById('gen-row').style.opacity='0.5';
@@ -870,6 +1014,22 @@ async function run(){
       '', ''
     ].map(v=>String(v||''));
 
+    // Coleta TODOS os e-mails preenchidos (locatários + fiadores) e adiciona o
+    // MAIL_TO (admin). Todos viram destinatários iguais no TO de um único e-mail.
+    const allEmails = [];
+    [...locs, ...fids].forEach(p => {
+      const e = (p.email||'').trim();
+      if (e && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) allEmails.push(e);
+    });
+    if (MAIL_TO) allEmails.push(MAIL_TO);
+    // Deduplicação case-insensitive (preserva primeira grafia encontrada)
+    const seen = {};
+    const recipientsTo = [];
+    allEmails.forEach(e => {
+      const k = e.toLowerCase();
+      if (!seen[k]) { seen[k] = 1; recipientsTo.push(e); }
+    });
+
     const payload={
       action:'submitContract',
       sheetName: SHEET_NAME,
@@ -884,13 +1044,14 @@ async function run(){
       headers: headers,
       row: row,
       email:{
-        to: MAIL_TO,
+        to: recipientsTo,    // TODOS os e-mails coletados (TO único, não CC/BCC)
         subject: 'Novo contrato preenchido — '+locs[0].nome+' — '+cn,
-        body: 'Um novo contrato foi preenchido no sistema.\n\n'+
+        body: 'Olá,\n\n'+
+              'Um novo contrato foi preenchido no sistema:\n\n'+
               'Locatário 1: '+locs[0].nome+'\n'+
               'Clínica: '+cn+'\n'+
               'Data: '+now+'\n\n'+
-              'O PDF (gerado a partir do template) está em anexo.'
+              'O PDF do contrato está em anexo.'
       }
     };
 
@@ -904,8 +1065,19 @@ async function run(){
     if(result.pdfGenerated){ log('PDF do contrato gerado a partir do template','ok'); }
     else if(result.pdfError){ log('⚠️ PDF NÃO foi gerado — '+result.pdfError,'er'); }
     if(result.sheetUrl) log('Registrado na planilha de contratos','ok');
-    if(result.emailSent){ log('E-mail de notificação enviado','ok'); }
-    else if(result.pdfGenerated===false){ log('E-mail não enviado (sem PDF anexo)','er'); }
+    if(result.emailSent){
+      const recips = (result.emailRecipients||[]);
+      if (recips.length){
+        log('E-mail enviado para '+recips.length+' destinatário(s):','ok');
+        recips.forEach(e => log('   ✉️  '+e, 'ok'));
+      } else {
+        log('E-mail enviado','ok');
+      }
+    } else if(result.pdfGenerated===false){
+      log('E-mail não enviado (sem PDF anexo)','er');
+    } else if(result.emailError){
+      log('E-mail não enviado: '+result.emailError,'er');
+    }
     log('🎉 Processo finalizado!','ok');
 
     try{ localStorage.setItem('contratos_lastUser', locs[0].nome||''); }catch(e){}
