@@ -289,9 +289,6 @@ select option{background:var(--dark3)}
           <div class="prl" id="prl">Processando...</div>
         </div>
         <div class="logbox" id="logbox"></div>
-        <div id="dl-area" class="hidden" style="text-align:center;margin-top:14px">
-          <button class="btn btn-p" onclick="downloadFilled()">⬇️ Baixar contrato (.docx)</button>
-        </div>
       </div>
 
       <div id="success-msg" class="hidden" style="margin-top:22px;padding:24px;border-radius:10px;text-align:center;animation:fadeUp .5s ease both">
@@ -1049,9 +1046,6 @@ async function run(){
         : (err && err.message) || '';
       throw new Error('Falha ao preencher o template'+(det?(': '+det):'')+'. Confira se as tags do .docx não foram alteradas.');
     }
-    window._filledDocx = filledBuf;
-    window._filledName = folderName + '_contrato.docx';
-    document.getElementById('dl-area').classList.remove('hidden');
     log('Contrato preenchido no navegador ('+(filledBuf.byteLength/1024).toFixed(1)+' KB)','ok');
 
     // O Apps Script recebe o .docx JÁ preenchido — só converte em PDF, salva no Drive,
@@ -1222,21 +1216,8 @@ async function run(){
   }
 }
 
-// ── Download do .docx preenchido (cliente) ─────────────────────
-function downloadFilled(){
-  if(!window._filledDocx){ toast('Gere o contrato primeiro.','err'); return; }
-  const blob=new Blob([window._filledDocx],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=window._filledName||'contrato.docx';
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1500);
-}
-
 // ── Reset ──────────────────────────────────────────────────────
 function resetApp(){
-  window._filledDocx=null;
-  const _dl=document.getElementById('dl-area'); if(_dl) _dl.classList.add('hidden');
   S={clinica:null,locatarios:1,fiadores:1};
   window._FILES={};
   const _rwReset = document.getElementById('review-warning'); if (_rwReset) _rwReset.classList.remove('hidden');
