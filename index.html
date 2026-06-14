@@ -516,20 +516,32 @@ function buildForms(cid,label,count,prefix) {
           <input type="text" id="${prefix}-${i}-cidade" placeholder="Cuiabá"></div>
         <div class="fgrp"><label>Estado</label>
           <select id="${prefix}-${i}-estado"><option value="">UF</option>${opts}</select></div>
+        <div class="fgrp"><label>Sexo *</label>
+          <select id="${prefix}-${i}-sexo">
+            <option value="">Selecione</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select></div>
         ${prefix==='fid' ? `
         <div class="fgrp"><label>Estado civil *</label>
           <select id="${prefix}-${i}-ecivil">
             <option value="">Selecione</option>
-            <option value="solteiro(a)">Solteiro(a)</option>
-            <option value="casado(a)">Casado(a)</option>
-            <option value="em união estável">União estável</option>
-            <option value="divorciado(a)">Divorciado(a)</option>
-            <option value="viúvo(a)">Viúvo(a)</option>
+            <option value="solteiro">Solteiro(a)</option>
+            <option value="casado">Casado(a)</option>
+            <option value="uniao">União estável</option>
+            <option value="divorciado">Divorciado(a)</option>
+            <option value="viuvo">Viúvo(a)</option>
           </select></div>
         <div class="fgrp"><label>Nome do cônjuge (se casado / união)</label>
           <input type="text" id="${prefix}-${i}-cjnome" placeholder="Nome completo do cônjuge"></div>
         <div class="fgrp"><label>CPF do cônjuge</label>
           <input type="text" id="${prefix}-${i}-cjcpf" placeholder="000.000.000-00" oninput="mCPF(this)"></div>
+        <div class="fgrp"><label>Sexo do cônjuge</label>
+          <select id="${prefix}-${i}-cjsexo">
+            <option value="">Selecione</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+          </select></div>
         ` : ''}
         <div class="fgrp full"><label>Documento comprobatório (PDF, JPG ou PNG)</label>
           <div class="fua" id="fua-${prefix}-${i}">
@@ -691,12 +703,55 @@ function collectP(prefix,count){
       cpf:gv(prefix+'-'+i+'-cpf'), whats:gv(prefix+'-'+i+'-whats'),
       email:gv(prefix+'-'+i+'-email'), end:gv(prefix+'-'+i+'-end'),
       cep:gv(prefix+'-'+i+'-cep'), cidade:gv(prefix+'-'+i+'-cidade'),
-      estado:gv(prefix+'-'+i+'-estado'),
+      estado:gv(prefix+'-'+i+'-estado'), sexo:gv(prefix+'-'+i+'-sexo'),
       ecivil:gv(prefix+'-'+i+'-ecivil'), cjnome:gv(prefix+'-'+i+'-cjnome'), cjcpf:gv(prefix+'-'+i+'-cjcpf'),
+      cjsexo:gv(prefix+'-'+i+'-cjsexo'),
       docs:(window._FILES&&window._FILES[prefix+'-'+i])?window._FILES[prefix+'-'+i].slice():[]
     });
   }
   return list;
+}
+
+// ── Composição da qualificação (gênero/número corretos, sem genéricos) ──
+function _fem(sexo){ return (sexo==='F'); }
+function _ecivil(base, fem){
+  switch(base){
+    case 'solteiro':    return fem?'solteira':'solteiro';
+    case 'casado':      return fem?'casada':'casado';
+    case 'uniao':       return 'em união estável';
+    case 'divorciado':  return fem?'divorciada':'divorciado';
+    case 'viuvo':       return fem?'viúva':'viúvo';
+    default:            return base||'';
+  }
+}
+function _contato(p){ return [p.email,p.whats].map(x=>(x||'').trim()).filter(Boolean).join(' - '); }
+function _local(p){
+  let s=(p.end||'').trim();
+  const cc=[(p.cep||'').trim(), [(p.cidade||'').trim(),(p.estado||'').trim()].filter(Boolean).join('/')].filter(Boolean).join(' - ');
+  if(cc) s+=(s?', ':'')+cc;
+  return s;
+}
+function qualLoc(p){
+  const f=_fem(p.sexo);
+  const nac=f?'brasileira':'brasileiro', insc=f?'inscrita':'inscrito', dom=f?'residente e domiciliada':'residente e domiciliado';
+  let s=`${p.nome}, ${nac}, RG ou CRO ${p.rg}, ${insc} no CPF sob o nº ${p.cpf}, ${dom} à ${_local(p)}`;
+  const c=_contato(p); if(c) s+=` - ${c}`;
+  return s+'.';
+}
+function qualFid(p){
+  const f=_fem(p.sexo);
+  const nac=f?'brasileira':'brasileiro', insc=f?'inscrita':'inscrito',
+        dom=f?'residente e domiciliada':'residente e domiciliado', port=f?'portadora':'portador';
+  let s=`${p.nome}, ${nac}, ${_ecivil(p.ecivil,f)}, ${port} da Cédula de Identidade ${p.rg}, ${insc} no CPF sob o nº ${p.cpf}, ${dom} à ${_local(p)}`;
+  const c=_contato(p); if(c) s+=` - ${c}`;
+  return s+'.';
+}
+function anuencia(p){
+  const cg=_fem(p.cjsexo);
+  const coob=cg?'coobrigada':'coobrigado', poss=cg?'sua':'seu';
+  let s=` Comparece também, na qualidade de anuente e ${coob}, ${poss} cônjuge ${p.cjnome}`;
+  if((p.cjcpf||'').trim()) s+=`, CPF ${p.cjcpf}`;
+  return s+', que concorda expressamente com a fiança ora prestada.';
 }
 
 // ── Review ─────────────────────────────────────────────────────
@@ -900,7 +955,7 @@ async function run(){
 
   // Validação OBRIGATÓRIA: 1 locatário e 1 fiador completos
   function validateRequired(p, label){
-    const required = [['nome','Nome'], ['cpf','CPF'], ['rg','RG'], ['end','Endereço'], ['cep','CEP']];
+    const required = [['nome','Nome'], ['cpf','CPF'], ['rg','RG'], ['end','Endereço'], ['cep','CEP'], ['sexo','Sexo']];
     for (const [k,name] of required) {
       if (!p[k] || !String(p[k]).trim()) {
         toast('Preencha o campo "'+name+'" do '+label,'err');
@@ -963,21 +1018,18 @@ async function run(){
       valorAluguel:   contrato.val,
       prazoContrato:  contrato.prazo,
       locatarios: locs.map((l,i)=>({
-        numero:i+1, nome:l.nome||'', rg:l.rg||'', cpf:l.cpf||'', endereco:l.end||'',
-        cep:l.cep||'', cidade:l.cidade||'', estado:l.estado||'', email:l.email||'', whats:l.whats||''
+        numero:i+1, nome:l.nome||'', rg:l.rg||'', cpf:l.cpf||'',
+        portador: _fem(l.sexo) ? 'portadora' : 'portador',
+        qualificacao: qualLoc(l)
       })),
       fiadores: fids.map((f,i)=>{
-        const mar = /casad|uni/i.test(f.ecivil||'');
-        const temConjuge = !!(mar && f.cjnome);
+        const temConjuge = /casad|uni/i.test(f.ecivil||'') && !!(f.cjnome||'').trim();
         return {
-          numero:i+1, nome:f.nome||'', estadoCivil:f.ecivil||'', rg:f.rg||'', cpf:f.cpf||'',
-          endereco:f.end||'', cep:f.cep||'', cidade:f.cidade||'', estado:f.estado||'',
-          email:f.email||'', whats:f.whats||'',
+          numero:i+1, nome:f.nome||'',
+          qualificacao: qualFid(f),
           temConjuge: temConjuge,
-          conjugeNome: f.cjnome||'', conjugeCpf: f.cjcpf||'',
-          anuencia: temConjuge
-            ? (' Comparece também, na qualidade de anuente e coobrigado(a), seu(sua) cônjuge ' + f.cjnome + (f.cjcpf ? (', CPF ' + f.cjcpf) : '') + ', que concorda expressamente com a fiança ora prestada.')
-            : ''
+          conjugeNome: f.cjnome||'',
+          anuencia: temConjuge ? anuencia(f) : ''
         };
       })
     };

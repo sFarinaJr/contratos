@@ -1,62 +1,71 @@
 # Como editar os templates `clinica.docx` e `face.docx`
 
-Estes dois arquivos `.docx` são os **modelos** do contrato. Você pode abrir no Word/Google Docs
-e **editar livremente todo o texto** (cláusulas, redação, formatação, ordem) — **desde que não
-altere as tags entre chaves duplas** `{{ ... }}`. São elas que o sistema preenche automaticamente
-com os dados digitados no site.
+Estes dois `.docx` são os **modelos** do contrato. Você pode abrir no Word/Google Docs e
+**editar livremente o texto, a formatação, as cláusulas e o visual** — desde que **não altere
+as tags entre chaves duplas** `{{ ... }}`. São elas que o sistema preenche com os dados do site.
 
 ## Regra de ouro
-- **Pode** mudar qualquer texto, negrito, espaçamento, títulos, adicionar ou remover cláusulas.
-- **Não** apague, traduza nem altere o que está dentro de `{{ }}`.
-- Toda tag de abertura precisa da sua tag de fechamento (ver loops abaixo).
-- Se quiser mover um campo de lugar, **recorte e cole a tag inteira** `{{nome}}` (com as chaves).
+- **Pode** mudar texto, fontes, cores, negrito, margens, cabeçalho/rodapé, ordem das cláusulas.
+- **Não** apague nem altere nada dentro de `{{ }}`.
+- Todo bloco aberto precisa do fechamento (ver loops abaixo).
+- Para mover um campo, recorte e cole a tag inteira (com as chaves).
 
-## Campos simples (preenchidos uma vez)
-| Tag | O que vira |
-|-----|------------|
-| `{{inicioContrato}}` | Data de início por extenso (ex.: 14 de junho de 2026) |
-| `{{vencimento}}` | Dia de vencimento do aluguel |
-| `{{valorAluguel}}` | Valor mensal (ex.: 2.500,00) |
+## Campos do contrato (uma vez)
+| Tag | Vira |
+|-----|------|
+| `{{inicioContrato}}` | Data por extenso (ex.: 14 de junho de 2026) |
+| `{{vencimento}}` | Dia de vencimento |
+| `{{valorAluguel}}` | Valor mensal |
 | `{{prazoContrato}}` | Permanência mínima (ex.: 12 (doze) meses) |
 
-## Locatários (repete por inquilino)
-Tudo que estiver **entre** `{{#locatarios}}` e `{{/locatarios}}` é repetido uma vez para cada
-locatário informado no site. Dentro do bloco, use os campos da pessoa:
+## Locatários — bloco que repete por inquilino
+Tudo entre `{{#locatarios}}` e `{{/locatarios}}` se repete para cada inquilino.
+| Tag | Vira |
+|-----|------|
+| `{{numero}}` | 1, 2, 3… |
+| `{{qualificacao}}` | A frase completa de qualificação, **já no gênero certo** (ex.: "Fulana, brasileira, RG ou CRO…, inscrita no CPF…, residente e domiciliada à…"). Montada pelo sistema a partir dos dados + **Sexo**. |
+| `{{nome}}` | Nome (usado na assinatura e na solicitação) |
+| `{{rg}}` `{{cpf}}` | RG/CRO e CPF (usados na solicitação) |
+| `{{portador}}` | "portador"/"portadora" conforme o sexo |
 
-```
-{{#locatarios}}
-LOCATÁRIO {{numero}}: {{nome}}, ... RG ou CRO {{rg}}, CPF {{cpf}}, ... {{endereco}}, {{cep}},
-{{cidade}}/{{estado}}, {{email}}, {{whats}}.
-{{/locatarios}}
-```
-Campos disponíveis: `{{numero}}` `{{nome}}` `{{rg}}` `{{cpf}}` `{{endereco}}` `{{cep}}`
-`{{cidade}}` `{{estado}}` `{{email}}` `{{whats}}`.
+> A **Solicitação de Integração ao Corpo Clínico** está dentro deste mesmo bloco — por isso sai
+> **uma por inquilino**, já preenchida.
 
-> A **Solicitação de Integração ao Corpo Clínico** também está dentro de um bloco
-> `{{#locatarios}} … {{/locatarios}}`, por isso sai **uma por inquilino**, já preenchida.
-
-## Fiadores (repete por fiador)
-Entre `{{#fiadores}}` e `{{/fiadores}}`. Mesmos campos da pessoa, mais:
-- `{{estadoCivil}}` — estado civil do fiador.
-- `{{anuencia}}` — frase automática da anuência do cônjuge (vazia se não houver).
+## Fiadores — bloco que repete por fiador
+Entre `{{#fiadores}}` e `{{/fiadores}}`:
+| Tag | Vira |
+|-----|------|
+| `{{numero}}` | 1, 2, 3… |
+| `{{qualificacao}}` | Qualificação completa do fiador, no gênero certo (inclui estado civil) |
+| `{{anuencia}}` | Frase da anuência do cônjuge (vazia se não houver) |
+| `{{nome}}` | Nome (assinatura) |
 
 ### Cônjuge anuente (condicional)
 Dentro do bloco de fiadores, o que estiver entre `{{#temConjuge}}` e `{{/temConjuge}}` **só
-aparece se o fiador for casado/união estável e tiver cônjuge informado**:
+aparece se o fiador for casado/união e tiver cônjuge informado**:
 ```
 {{#temConjuge}}
 {{conjugeNome}} – CÔNJUGE ANUENTE DO FIADOR {{numero}}
 {{/temConjuge}}
 ```
 
-## Resumo dos blocos (sempre em par)
-| Abre | Fecha | Repete/condiciona |
-|------|-------|-------------------|
-| `{{#locatarios}}` | `{{/locatarios}}` | um por locatário |
-| `{{#fiadores}}` | `{{/fiadores}}` | um por fiador |
-| `{{#temConjuge}}` | `{{/temConjuge}}` | só se houver cônjuge anuente |
+## Blocos (sempre em par)
+| Abre | Fecha | Efeito |
+|------|-------|--------|
+| `{{#locatarios}}` | `{{/locatarios}}` | repete por locatário |
+| `{{#fiadores}}` | `{{/fiadores}}` | repete por fiador |
+| `{{#temConjuge}}` | `{{/temConjuge}}` | só com cônjuge anuente |
+
+## Por que a qualificação é uma tag só (`{{qualificacao}}`)?
+Para o texto sair **sem genéricos** ("brasileira/inscrita/portadora" no gênero certo, e omitindo
+e-mail/telefone vazios), o sistema monta a frase de qualificação automaticamente a partir dos
+campos + **Sexo**. Assim o modelo fica limpo e bonito. Se quiser mudar o **formato** dessa frase,
+me peça — está no `index.html` (funções `qualLoc`/`qualFid`).
+
+## Formatação
+O modelo já vem com A4, margens, **cabeçalho e rodapé de página por clínica** (nome + CNPJ no topo,
+endereço + nº de página no rodapé), título estilizado e acento dourado. Tudo isso é editável no Word.
 
 ## Se algo quebrar
-Se o site mostrar erro de preenchimento, normalmente é uma tag incompleta (faltou `}}`) ou um
-bloco sem fechamento. Volte ao `.docx`, confira os pares acima e salve novamente.
-Há cópias de segurança `.docx.bak*` na pasta caso precise restaurar.
+Erro de preenchimento costuma ser tag incompleta (faltou `}}`) ou bloco sem fechamento. Há cópias
+`.docx.bak*` na pasta para restaurar.
