@@ -1,6 +1,17 @@
 .DS_Store
+*.bak
 contratos_melhorias.bundle
 
-# Peças jurídicas — manter apenas locais (litígio real)
+# Ambiente Claude e skills (configs de casos contêm dados pessoais)
+.claude/
+
+# Peças jurídicas e dados de casos reais — somente locais (dados pessoais/litígio)
 comunicacao_RT_CRO.docx
 notificacao_extrajudicial.docx
+notificacoes_*/
+oficios_*/
+contra_*/
+
+# Scripts auxiliares de geração de peças/edição
+gerar_notificacoes_*.py
+_aplicar_*.py
