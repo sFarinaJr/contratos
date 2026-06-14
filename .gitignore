@@ -1,5 +1,6 @@
 .DS_Store
-*.bak
+*.bak*
+node_modules/
 contratos_melhorias.bundle
 
 # Ambiente Claude e skills (configs de casos contêm dados pessoais)
@@ -12,6 +13,6 @@ notificacoes_*/
 oficios_*/
 contra_*/
 
-# Scripts auxiliares de geração de peças/edição
+# Scripts auxiliares de geração/edição (o .docx é a fonte editável; estes ficam locais)
 gerar_notificacoes_*.py
-_aplicar_*.py
+_*.py
