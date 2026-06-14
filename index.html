@@ -506,6 +506,21 @@ function buildForms(cid,label,count,prefix) {
           <input type="text" id="${prefix}-${i}-cidade" placeholder="Cuiabá"></div>
         <div class="fgrp"><label>Estado</label>
           <select id="${prefix}-${i}-estado"><option value="">UF</option>${opts}</select></div>
+        ${prefix==='fid' ? `
+        <div class="fgrp"><label>Estado civil *</label>
+          <select id="${prefix}-${i}-ecivil">
+            <option value="">Selecione</option>
+            <option value="solteiro(a)">Solteiro(a)</option>
+            <option value="casado(a)">Casado(a)</option>
+            <option value="em união estável">União estável</option>
+            <option value="divorciado(a)">Divorciado(a)</option>
+            <option value="viúvo(a)">Viúvo(a)</option>
+          </select></div>
+        <div class="fgrp"><label>Nome do cônjuge (se casado / união)</label>
+          <input type="text" id="${prefix}-${i}-cjnome" placeholder="Nome completo do cônjuge"></div>
+        <div class="fgrp"><label>CPF do cônjuge</label>
+          <input type="text" id="${prefix}-${i}-cjcpf" placeholder="000.000.000-00" oninput="mCPF(this)"></div>
+        ` : ''}
         <div class="fgrp full"><label>Documento comprobatório (PDF, JPG ou PNG)</label>
           <div class="fua" id="fua-${prefix}-${i}">
             <input type="file" id="${prefix}-${i}-doc" accept=".pdf,.jpg,.jpeg,.png" multiple
@@ -666,7 +681,9 @@ function collectP(prefix,count){
       cpf:gv(prefix+'-'+i+'-cpf'), whats:gv(prefix+'-'+i+'-whats'),
       email:gv(prefix+'-'+i+'-email'), end:gv(prefix+'-'+i+'-end'),
       cep:gv(prefix+'-'+i+'-cep'), cidade:gv(prefix+'-'+i+'-cidade'),
-      estado:gv(prefix+'-'+i+'-estado'), docs:(window._FILES&&window._FILES[prefix+'-'+i])?window._FILES[prefix+'-'+i].slice():[]
+      estado:gv(prefix+'-'+i+'-estado'),
+      ecivil:gv(prefix+'-'+i+'-ecivil'), cjnome:gv(prefix+'-'+i+'-cjnome'), cjcpf:gv(prefix+'-'+i+'-cjcpf'),
+      docs:(window._FILES&&window._FILES[prefix+'-'+i])?window._FILES[prefix+'-'+i].slice():[]
     });
   }
   return list;
@@ -692,6 +709,7 @@ function buildReview(){
       +   rv('CEP', gv(prefix+'-'+idx+'-cep'))
       +   rv('Cidade', gv(prefix+'-'+idx+'-cidade'))
       +   rv('UF', gv(prefix+'-'+idx+'-estado'))
+      +   (prefix==='fid' ? rv('Estado civil', gv(prefix+'-'+idx+'-ecivil')) + rv('Cônjuge anuente', gv(prefix+'-'+idx+'-cjnome')) : '')
       +   '<div class="rv" style="grid-column:1/-1"><div class="rvl">Documentos anexados</div><div class="rvv" style="font-weight:400;color:'+(filesArr.length?'var(--gold-light)':'var(--muted)')+'">'+esc(filesTxt)+'</div></div>'
       + '</div></div>';
   }
@@ -953,6 +971,15 @@ async function run(){
       replacements['{{estadoFiador'  +i+'}}']= f.estado || '';
       replacements['{{emailFiador'   +i+'}}']= f.email  || '';
       replacements['{{whatsFiador'   +i+'}}']= f.whats  || '';
+      const _civ = f.ecivil || '';
+      const _mar = /casad|uni/i.test(_civ);
+      replacements['{{estadoCivilFiador'+i+'}}'] = _civ;
+      replacements['{{anuenciaFiador'+i+'}}'] = (_mar && f.cjnome)
+        ? (' Comparece também, na qualidade de anuente e coobrigado(a), seu(sua) cônjuge ' + f.cjnome + (f.cjcpf ? (', CPF ' + f.cjcpf) : '') + ', que concorda expressamente com a fiança ora prestada.')
+        : '';
+      replacements['{{assinaturaConjugeFiador'+i+'}}'] = (_mar && f.cjnome)
+        ? (f.cjnome + ' – CÔNJUGE ANUENTE DO FIADOR ' + i)
+        : '';
     }
     const conditions = {
       'LOCATARIO 2': S.locatarios >= 2,
