@@ -77,6 +77,9 @@ select option{background:var(--dark3)}
 .btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 .btn-g{background:transparent;color:var(--muted);border:1px solid var(--dark4)}
 .btn-g:hover{border-color:var(--gold);color:var(--gold)}
+.abtn{background:rgba(201,168,76,.12);border:1px solid var(--border);color:var(--gold-light);font-size:.8rem;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;margin:0 0 22px;display:inline-flex;gap:7px;align-items:center;transition:var(--tr)}
+.abtn:hover{border-color:var(--gold);background:rgba(201,168,76,.2)}
+.abtn.playing{border-color:var(--gold);background:rgba(201,168,76,.22)}
 .brow{display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:12px}
 .rvg{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:.88rem}
 .rv{display:flex;flex-direction:column;gap:2px}
@@ -188,6 +191,7 @@ select option{background:var(--dark3)}
     <div class="card">
       <div class="ct">🏥 Selecione a Clínica</div>
       <div class="cs">Escolha a clínica que será objeto do contrato de locação</div>
+      <button type="button" class="abtn" id="abtn1" onclick="replayPhase(1)">🔊 Ouvir a explicação</button>
       <div class="clinics">
         <div class="cc" id="cl1" onclick="selC(1)">
           <img src="imagem1.jpg" alt="Odonto Conceitualle" onerror="this.style.display='none'">
@@ -211,6 +215,7 @@ select option{background:var(--dark3)}
     <div class="card">
       <div class="ct">📝 Dados do Contrato</div>
       <div class="cs">Informe as condições da locação</div>
+      <button type="button" class="abtn" id="abtn2" onclick="replayPhase(2)">🔊 Ouvir a explicação</button>
       <div class="fg fg3">
         <div class="fgrp"><label>Data de início *</label><input type="date" id="f-di"></div>
         <div class="fgrp"><label>Dia do vencimento *</label><input type="number" id="f-venc" min="1" max="31" placeholder="Ex: 5"></div>
@@ -252,6 +257,7 @@ select option{background:var(--dark3)}
     <div class="card">
       <div class="ct">👤 Dados dos Locatários</div>
       <div class="cs">Preencha os dados de cada inquilino</div>
+      <button type="button" class="abtn" id="abtn3" onclick="replayPhase(3)">🔊 Ouvir a explicação</button>
       <div id="loc-c"></div>
       <div class="brow">
         <button class="btn btn-g" onclick="goStep(2)">← Voltar</button>
@@ -265,6 +271,7 @@ select option{background:var(--dark3)}
     <div class="card">
       <div class="ct">🛡️ Dados dos Fiadores</div>
       <div class="cs">Preencha os dados de cada fiador</div>
+      <button type="button" class="abtn" id="abtn4" onclick="replayPhase(4)">🔊 Ouvir a explicação</button>
       <div style="margin:14px 0 22px;padding:14px 18px;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.4);border-radius:8px;font-size:.92rem;color:var(--cream);line-height:1.55">
         <strong style="color:var(--gold-light)">📋 Documentos obrigatórios:</strong> Para garantir a fiança é necessário a comprovação de renda e o último imposto de renda. Esses arquivos devem ser anexados para comprovação.
       </div>
@@ -281,6 +288,7 @@ select option{background:var(--dark3)}
     <div class="card">
       <div class="ct">☁️ Revisão e Envio</div>
       <div class="cs">Confira os dados — o contrato será salvo automaticamente no Google Drive</div>
+      <button type="button" class="abtn" id="abtn5" onclick="replayPhase(5)">🔊 Ouvir a explicação</button>
       <div id="review-a"></div>
       
       <div id="prog-sec" class="hidden">
@@ -442,6 +450,52 @@ function bufToB64(buf) {
   return btoa(bin);
 }
 
+// ── Áudio explicativo por fase (voz Faber / Piper) ─────────────
+const PHASE_AUDIO = {
+  1: ['audio/1-boas-vindas.mp3', 'audio/2-clinica.mp3'],
+  2: ['audio/3-contrato.mp3'],
+  3: ['audio/4-inquilinos.mp3'],
+  4: ['audio/5-fiadores.mp3'],
+  5: ['audio/6-revisao.mp3']
+};
+let _au = null, _auPhase = null, _played = {}, _gestureArmed = false;
+function _setPlaying(on){
+  for (let i=1;i<=5;i++){ const b=document.getElementById('abtn'+i); if(b) b.classList.toggle('playing', on && _auPhase===i); }
+}
+function _stopAu(){
+  if(_au){ try{_au.pause();}catch(e){} _au.onended=null; _au=null; }
+  _auPhase=null; _setPlaying(false);
+}
+function _seq(n, list, i){
+  if(i>=list.length){ _stopAu(); return null; }
+  if(_au){ try{_au.pause();}catch(e){} _au.onended=null; }
+  _au = new Audio(list[i]); _auPhase = n; _setPlaying(true);
+  _au.onended = function(){ _seq(n, list, i+1); };
+  return _au.play();
+}
+function replayPhase(n){            // clique do usuário = gesto válido
+  const list = PHASE_AUDIO[n]; if(!list) return;
+  _stopAu(); _seq(n, list, 0);
+}
+function autoPhase(n){              // toca 1x ao entrar na fase
+  if(_played[n] || !PHASE_AUDIO[n]) return;
+  _played[n] = true; _stopAu();
+  const p = _seq(n, PHASE_AUDIO[n], 0);
+  if(p && p.catch){ p.catch(function(){ _played[n]=false; if(n===1) _armGesture(); }); }
+}
+function _armGesture(){             // se o navegador bloquear o autoplay inicial
+  if(_gestureArmed) return; _gestureArmed = true;
+  const h = function(){
+    document.removeEventListener('pointerdown', h, true);
+    document.removeEventListener('keydown', h, true);
+    const onP1 = !document.getElementById('p1').classList.contains('hidden');
+    if(!_played[1] && onP1) autoPhase(1);
+  };
+  document.addEventListener('pointerdown', h, true);
+  document.addEventListener('keydown', h, true);
+}
+window.addEventListener('DOMContentLoaded', function(){ autoPhase(1); });
+
 // ── Clinic / Counter / Nav ─────────────────────────────────────
 function selC(n) {
   S.clinica=n;
@@ -474,6 +528,7 @@ function goStep(n) {
     const c=document.getElementById('c'+i);
     if(c) c.classList.toggle('done',i<n);
   }
+  _stopAu(); autoPhase(n);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 

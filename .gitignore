@@ -17,3 +17,4 @@ contra_*/
 # Scripts auxiliares de geração/edição (o .docx é a fonte editável; estes ficam locais)
 gerar_notificacoes_*.py
 _*.py
+audio-preview.html
