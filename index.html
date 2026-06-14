@@ -1025,10 +1025,10 @@ async function run(){
       fiadores: fids.map((f,i)=>{
         const temConjuge = /casad|uni/i.test(f.ecivil||'') && !!(f.cjnome||'').trim();
         return {
-          numero:i+1, nome:f.nome||'',
+          numero:i+1, nome:f.nome||'', cpf:f.cpf||'',
           qualificacao: qualFid(f),
           temConjuge: temConjuge,
-          conjugeNome: f.cjnome||'',
+          conjugeNome: f.cjnome||'', conjugeCpf: f.cjcpf||'',
           anuencia: temConjuge ? anuencia(f) : ''
         };
       })
