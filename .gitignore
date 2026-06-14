@@ -1,5 +1,6 @@
 .DS_Store
 *.bak*
+*.pages
 node_modules/
 contratos_melhorias.bundle
 
