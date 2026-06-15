@@ -1183,21 +1183,28 @@ async function run(){
     log('Enviando contrato e anexos...');
 
     const personCols = ['Nome','CPF','RG','WhatsApp','E-mail','Endereço','CEP','Cidade','UF'];
+    const extraCols  = ['Sexo','Estado Civil','Cônjuge Nome','Cônjuge CPF','Cônjuge Sexo'];
     const headers = ['Data Registro','Clínica','Início Contrato','Vencimento Dia','Valor Mensal','Prazo Mínimo',
       'Nº Locatários','Nº Fiadores'];
     for (let i=1;i<=3;i++) personCols.forEach(c => headers.push('Loc'+i+' '+c));
     for (let i=1;i<=3;i++) personCols.forEach(c => headers.push('Fiad'+i+' '+c));
     headers.push('ID Pasta Drive','Link Pasta Drive');
+    // colunas extras no FINAL (Sexo/Estado Civil/Cônjuge) — gravadas pelo Apps Script por nome
+    for (let i=1;i<=3;i++) extraCols.forEach(c => headers.push('Loc'+i+' '+c));
+    for (let i=1;i<=3;i++) extraCols.forEach(c => headers.push('Fiad'+i+' '+c));
 
     const now=new Date().toLocaleString('pt-BR',{timeZone:'America/Cuiaba'});
     const l1=locs[0]||{},l2=locs[1]||{},l3=locs[2]||{};
     const f1=fids[0]||{},f2=fids[1]||{},f3=fids[2]||{};
     function pcols(p){ return [p.nome,p.cpf,p.rg,p.whats,p.email,p.end,p.cep,p.cidade,p.estado]; }
+    function ecols(p){ return [p.sexo,p.ecivil,p.cjnome,p.cjcpf,p.cjsexo]; }
     const row = [
       now,cn,fmtD(contrato.di),contrato.venc,'R$ '+contrato.val,contrato.prazo,S.locatarios,S.fiadores,
       ...pcols(l1), ...pcols(l2), ...pcols(l3),
       ...pcols(f1), ...pcols(f2), ...pcols(f3),
-      '', ''
+      '', '',
+      ...ecols(l1), ...ecols(l2), ...ecols(l3),
+      ...ecols(f1), ...ecols(f2), ...ecols(f3)
     ].map(v=>String(v||''));
 
     // Coleta TODOS os e-mails preenchidos (locatários + fiadores) e adiciona o
