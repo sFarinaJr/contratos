@@ -494,6 +494,13 @@ function _armGesture(){             // se o navegador bloquear o autoplay inicia
   document.addEventListener('pointerdown', h, true);
   document.addEventListener('keydown', h, true);
 }
+let _errAu = null;
+function playError(){                // narração do erro (toast no canto inferior direito)
+  _stopAu();                         // pausa qualquer narração de fase
+  try{ if(_errAu){ _errAu.pause(); } }catch(e){}
+  _errAu = new Audio('audio/erro.mp3');
+  const p = _errAu.play(); if(p && p.catch) p.catch(function(){});
+}
 window.addEventListener('DOMContentLoaded', function(){ autoPhase(1); });
 
 // ── Clinic / Counter / Nav ─────────────────────────────────────
@@ -1328,6 +1335,7 @@ function toast(msg,type='ok'){
   t.className='show '+type;
   clearTimeout(_tt);
   _tt=setTimeout(()=>t.className='',5000);
+  if(type==='err') playError();
 }
 </script>
 </body>
