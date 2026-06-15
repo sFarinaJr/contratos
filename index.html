@@ -583,7 +583,7 @@ function buildForms(cid,label,count,prefix) {
           </select></div>
         ${prefix==='fid' ? `
         <div class="fgrp"><label>Estado civil *</label>
-          <select id="${prefix}-${i}-ecivil">
+          <select id="${prefix}-${i}-ecivil" onchange="toggleConjuge('${prefix}-${i}')">
             <option value="">Selecione</option>
             <option value="solteiro">Solteiro(a)</option>
             <option value="casado">Casado(a)</option>
@@ -591,16 +591,18 @@ function buildForms(cid,label,count,prefix) {
             <option value="divorciado">Divorciado(a)</option>
             <option value="viuvo">Viúvo(a)</option>
           </select></div>
-        <div class="fgrp"><label>Nome do cônjuge (se casado / união)</label>
+        <div id="${prefix}-${i}-cjwrap" style="display:none">
+        <div class="fgrp"><label>Nome do cônjuge *</label>
           <input type="text" id="${prefix}-${i}-cjnome" placeholder="Nome completo do cônjuge"></div>
         <div class="fgrp"><label>CPF do cônjuge</label>
           <input type="text" id="${prefix}-${i}-cjcpf" placeholder="000.000.000-00" oninput="mCPF(this)"></div>
-        <div class="fgrp"><label>Sexo do cônjuge</label>
+        <div class="fgrp"><label>Sexo do cônjuge *</label>
           <select id="${prefix}-${i}-cjsexo">
             <option value="">Selecione</option>
             <option value="M">Masculino</option>
             <option value="F">Feminino</option>
           </select></div>
+        </div>
         ` : ''}
         <div class="fgrp full"><label>Documento comprobatório (PDF, JPG ou PNG)</label>
           <div class="fua" id="fua-${prefix}-${i}">
@@ -749,6 +751,15 @@ function validateCPFField(el){
     el.style.borderColor='#e05252';
     el.title='CPF inválido — confira os números';
   }
+}
+
+// Mostra os campos do cônjuge só quando o estado civil for casado/união
+function toggleConjuge(pref){
+  const ec=(document.getElementById(pref+'-ecivil')||{}).value||'';
+  const need = (ec==='casado' || ec==='uniao');
+  const w=document.getElementById(pref+'-cjwrap');
+  if(w) w.style.display = need ? 'contents' : 'none';
+  if(!need){ ['cjnome','cjcpf','cjsexo'].forEach(k=>{ const el=document.getElementById(pref+'-'+k); if(el) el.value=''; }); }
 }
 
 // ── Collect ────────────────────────────────────────────────────
@@ -973,6 +984,7 @@ function applyRowToForm(row){
     _setVal(prefix+'-'+idx+'-cjnome', row[p+'Cônjuge Nome']);
     _setVal(prefix+'-'+idx+'-cjcpf',  row[p+'Cônjuge CPF']);
     _setVal(prefix+'-'+idx+'-cjsexo', row[p+'Cônjuge Sexo']);
+    toggleConjuge(prefix+'-'+idx);
   }
   for (let i=1; i<=nLoc; i++) fillPerson('loc', 'Loc',  i, row);
   for (let i=1; i<=nFid; i++) fillPerson('fid', 'Fiad', i, row);
@@ -1053,6 +1065,14 @@ async function run(){
   for (let i = 1; i < fids.length; i++) {
     if (fids[i].cpf && !isValidCPF(fids[i].cpf)) {
       toast('CPF inválido em Fiador '+(i+1),'err'); return;
+    }
+  }
+  // Cônjuge é obrigatório quando o fiador é casado / união estável
+  for (let i = 0; i < fids.length; i++) {
+    const f = fids[i];
+    if (/casad|uni/i.test(f.ecivil||'')) {
+      if (!f.cjnome || !f.cjnome.trim()) { toast('Informe o nome do cônjuge do Fiador '+(i+1),'err'); return; }
+      if (!f.cjsexo) { toast('Informe o sexo do cônjuge do Fiador '+(i+1),'err'); return; }
     }
   }
   if(!APPS_SCRIPT_URL){
